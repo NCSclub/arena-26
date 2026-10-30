@@ -6,32 +6,20 @@ const engines = [];
 
 const pixelEdge = document.createElement('div');
 pixelEdge.className = 'pixel-edge'; pixelEdge.setAttribute('aria-hidden', 'true');
-for (let row = 0; row < 52; row++) for (let column = 0; column < 18; column++) {
+for (let row = 0; row < 68; row++) for (let column = 0; column < 14; column++) {
   const noise = (Math.sin(row * 47.1 + column * 13.7) * 43758.54) % 1;
-  const white = Math.abs(noise) > column / 17;
-  if ((column < 8 && white) || (column >= 8 && !white)) continue;
+  const white = Math.abs(noise) > column / 13;
+  if ((column < 7 && white) || (column >= 7 && !white)) continue;
   const square = document.createElement('i');
   square.className = white ? '' : 'dark';
-  Object.assign(square.style, { left: `${column / 18 * 100}%`, top: `${row / 52 * 100}%`, width: '5.7%', height: '1.95%' });
+  Object.assign(square.style, { left: `${column / 14 * 100}%`, top: `${row / 68 * 100}%`, width: '7.2%', height: '1.5%' });
   square.style.animationDelay = `${-((row * 1.7 + column * .8) % 9)}s`;
-  square.style.animationDuration = `${3.6 + (row + column) % 4}s`;
+  square.style.animationDuration = `${9 + (row + column) % 5}s`;
   pixelEdge.append(square);
 }
 $('.about').append(pixelEdge);
 $('.footer').append(pixelEdge.cloneNode(true));
 
-for (const side of ['top', 'bottom']) {
-  const seam = document.createElement('div');
-  seam.className = `section-seam ${side}`;
-  seam.setAttribute('aria-hidden', 'true');
-  for (let col = 0; col < 64; col++) {
-    const height = 6 + Math.floor((Math.abs(Math.sin(col * 127.1) * 43758.5453) % 1) * 4) * 7;
-    const block = document.createElement('i');
-    Object.assign(block.style, { left: `${col / 64 * 100}%`, width: '1.6%', height: `${height}px` });
-    seam.append(block);
-  }
-  $('.about').append(seam);
-}
 
 function engine(canvas, render) {
   const ctx = canvas.getContext('2d');
