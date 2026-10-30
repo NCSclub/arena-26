@@ -35,3 +35,5 @@ La seconde direction reprend la composition Figma : logo centré, slogan sur une
 ## Hébergement
 
 Le dossier `dist` est statique et peut être hébergé indépendamment. Aucun déploiement et aucun push ne sont effectués dans ce projet.
+
+Le fond technique est partagé entre les sections sombres (ASCII plus contrasté, tracés de circuits et signaux mobiles). Les joints blancs/noirs utilisent des pixels de transition ; les carrés latéraux dérivent lentement. Les lignes du programme se décalent de 10 px au survol ou au focus clavier, avec ombre et accent lumineux.

@@ -12,10 +12,25 @@ for (let row = 0; row < 52; row++) for (let column = 0; column < 18; column++) {
   const square = document.createElement('i');
   square.className = white ? '' : 'dark';
   Object.assign(square.style, { left: `${column / 18 * 100}%`, top: `${row / 52 * 100}%`, width: '5.7%', height: '1.95%' });
+  square.style.animationDelay = `${-((row * 1.7 + column * .8) % 9)}s`;
+  square.style.animationDuration = `${6 + (row + column) % 5}s`;
   pixelEdge.append(square);
 }
 $('.about').append(pixelEdge);
 $('.footer').append(pixelEdge.cloneNode(true));
+
+for (const side of ['top', 'bottom']) {
+  const seam = document.createElement('div');
+  seam.className = `section-seam ${side}`;
+  seam.setAttribute('aria-hidden', 'true');
+  for (let col = 0; col < 64; col++) {
+    const height = 6 + Math.floor((Math.abs(Math.sin(col * 127.1) * 43758.5453) % 1) * 4) * 7;
+    const block = document.createElement('i');
+    Object.assign(block.style, { left: `${col / 64 * 100}%`, width: '1.6%', height: `${height}px` });
+    seam.append(block);
+  }
+  $('.about').append(seam);
+}
 
 function engine(canvas, render) {
   const ctx = canvas.getContext('2d');
@@ -50,32 +65,54 @@ document.querySelectorAll('[data-ascii="background"]').forEach(canvas => {
   const area = canvas.parentElement;
   let px = -1000, py = -1000, clicked = -1000;
   area.addEventListener('pointermove', event => {
-    const r = area.getBoundingClientRect(); px = event.clientX - r.left; py = event.clientY - r.top;
+    const r = canvas.getBoundingClientRect(); px = event.clientX - r.left; py = event.clientY - r.top;
   }, { passive: true });
   area.addEventListener('pointerleave', () => { px = py = -1000; });
   area.addEventListener('pointerdown', () => { clicked = performance.now() / 1000; }, { passive: true });
   engine(canvas, (ctx, w, h, now) => {
-    const t = motionOff ? 0 : now * .65;
-    const step = w < 600 ? 7 : 8, line = 10;
-    ctx.font = '8px "IBM Plex Mono", monospace';
-    const ramp = ' .·:+*=x%#@';
+    const t = motionOff ? 0 : now * .6;
+    const step = w < 600 ? 8 : 9, line = 12;
+    ctx.font = '9px "IBM Plex Mono", monospace';
+    const ramp = ' .:+01<>[]=#';
     for (let y = 0; y < h; y += line) for (let x = 0; x < w; x += step) {
       const nx = x / w, ny = y / h;
       const warpX = nx + .16 * Math.sin(ny * 5 + t * .7);
       const warpY = ny + .12 * Math.cos(nx * 6 - t * .6);
-      const flow = Math.sin(warpX * 11 + warpY * 5 + t) * Math.cos(warpY * 8 - warpX * 3 - t * .7);
+      const flow = Math.sin(warpX * 14 + warpY * 6 + t) * Math.cos(warpY * 10 - warpX * 4 - t * .7);
       const ridge = Math.pow(Math.max(0, 1 - Math.abs(flow - .2) * 2.2), 2);
       const centerFade = Math.min(1, Math.pow(Math.abs(nx - .5) * 2.7, 1.3) + Math.pow(Math.abs(ny - .42) * 1.35, 3));
       const distance = Math.hypot(x - px, y - py);
       const wake = motionOff ? 0 : Math.max(0, 1 - distance / 180);
       const age = now - clicked;
       const ring = motionOff ? 0 : Math.exp(-Math.pow((distance - age * 220) / 35, 2)) * Math.max(0, 1 - age / 2);
-      const value = Math.min(1, ridge * centerFade + wake * .8 + ring);
+      const scan = Math.pow(Math.max(0, Math.cos(ny * 13 - t * 1.7)), 16) * .22;
+      const lane = (Math.floor(x / step) % 13 === 0 || Math.floor(y / line) % 11 === 0) ? .14 : 0;
+      const value = Math.min(1, (ridge + scan + lane) * centerFade + wake * .8 + ring);
       if (value < .09) continue;
-      ctx.fillStyle = wake > .25 ? '#00d7be' : '#b6bebd';
-      ctx.globalAlpha = Math.min(.68, value * .58);
+      const signal = Math.sin(x * .17 + y * .09 + Math.floor(t * 1.5)) > .9;
+      ctx.fillStyle = wake > .25 || signal ? '#00d7be' : '#cad8d4';
+      ctx.globalAlpha = Math.min(.8, value * .83);
       const i = Math.min(ramp.length - 1, Math.floor(value * (ramp.length - 1)));
       ctx.fillText(ramp[i], x + Math.sin(t + ny * 8) * wake * 9, y);
+    }
+    ctx.globalAlpha = 1;
+    const unit = Math.min(64, w / 12);
+    ctx.lineWidth = .7;
+    for (let side = 0; side < 2; side++) for (let track = 0; track < 4; track++) {
+      const origin = side ? w : 0;
+      const direction = side ? -1 : 1;
+      const x = origin + direction * unit * (track + .5);
+      const y = h * (.17 + track * .2);
+      ctx.strokeStyle = '#00d7be'; ctx.globalAlpha = .12;
+      ctx.beginPath(); ctx.moveTo(x, y - unit); ctx.lineTo(x, y);
+      ctx.lineTo(x + direction * unit * .5, y + unit * .5);
+      ctx.lineTo(x + direction * unit * 1.2, y + unit * .5); ctx.stroke();
+      const travel = ((t * .22 + track * .23) % 1);
+      ctx.globalAlpha = .55;
+      ctx.fillStyle = '#00d7be';
+      ctx.fillRect(x - 1.5, y - unit + travel * unit, 3, 3);
+      ctx.globalAlpha = .35;
+      ctx.strokeRect(x + direction * unit * 1.2 - 2, y + unit * .5 - 2, 4, 4);
     }
     ctx.globalAlpha = 1;
   });
