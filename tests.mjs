@@ -1,6 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { registrationPayload } from './dist/registration-data.js';
+import { addRipple } from './dist/ripples.js';
+
+test('Repeated background clicks preserve earlier ripple origins and start times', () => {
+  let ripples = addRipple([], 40, 70, 10);
+  ripples = addRipple(ripples, 300, 140, 10.4);
+  assert.deepEqual(ripples, [{ x: 40, y: 70, time: 10 }, { x: 300, y: 140, time: 10.4 }]);
+  assert.deepEqual(addRipple(ripples, 600, 200, 12.2), [{ x: 300, y: 140, time: 10.4 }, { x: 600, y: 200, time: 12.2 }]);
+  for (let i = 0; i < 20; i++) ripples = addRipple(ripples, i, i, 11 + i * .01);
+  assert.equal(ripples.length, 8);
+});
 
 test('Solo export omits stale team and transport answers after changing choices', () => {
   const data = registrationPayload({ fullName: '  Test Participant  ', hasTeam: 'no', teamName: 'Previous team', teammate1: 'Previous teammate', needsTransportation: 'no', transportationAddress: 'Previous address' });

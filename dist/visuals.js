@@ -1,3 +1,4 @@
+import { addRipple } from './ripples.js';
 const $ = selector => document.querySelector(selector);
 export let motionOff = sessionStorage.getItem('arena-motion') === 'off';
 let logoPaused = false;
@@ -13,7 +14,7 @@ for (let row = 0; row < 52; row++) for (let column = 0; column < 18; column++) {
   square.className = white ? '' : 'dark';
   Object.assign(square.style, { left: `${column / 18 * 100}%`, top: `${row / 52 * 100}%`, width: '5.7%', height: '1.95%' });
   square.style.animationDelay = `${-((row * 1.7 + column * .8) % 9)}s`;
-  square.style.animationDuration = `${6 + (row + column) % 5}s`;
+  square.style.animationDuration = `${3.6 + (row + column) % 4}s`;
   pixelEdge.append(square);
 }
 $('.about').append(pixelEdge);
@@ -63,13 +64,21 @@ function engine(canvas, render) {
 
 document.querySelectorAll('[data-ascii="background"]').forEach(canvas => {
   const area = canvas.parentElement;
-  let px = -1000, py = -1000, clicked = -1000;
+  let px = -1000, py = -1000;
+  let ripples = [];
   area.addEventListener('pointermove', event => {
     const r = canvas.getBoundingClientRect(); px = event.clientX - r.left; py = event.clientY - r.top;
   }, { passive: true });
   area.addEventListener('pointerleave', () => { px = py = -1000; });
-  area.addEventListener('pointerdown', () => { clicked = performance.now() / 1000; }, { passive: true });
+  area.addEventListener('pointerdown', event => {
+    if (event.target.closest('a, button, input, select, textarea, summary, .ascii-sculpture')) return;
+    const r = canvas.getBoundingClientRect();
+    ripples = addRipple(ripples, event.clientX - r.left, event.clientY - r.top, performance.now() / 1000);
+  }, { passive: true });
   engine(canvas, (ctx, w, h, now) => {
+    ripples = ripples.filter(ripple => now - ripple.time < 2);
+    const waves = motionOff ? [] : ripples.map(ripple => ({ ...ripple, radius: (now - ripple.time) * 220, strength: 1 - (now - ripple.time) / 2 }));
+    canvas.dataset.ripples = String(waves.length);
     const t = motionOff ? 0 : now * .6;
     const step = w < 600 ? 8 : 9, line = 12;
     ctx.font = '9px "IBM Plex Mono", monospace';
@@ -83,8 +92,11 @@ document.querySelectorAll('[data-ascii="background"]').forEach(canvas => {
       const centerFade = Math.min(1, Math.pow(Math.abs(nx - .5) * 2.7, 1.3) + Math.pow(Math.abs(ny - .42) * 1.35, 3));
       const distance = Math.hypot(x - px, y - py);
       const wake = motionOff ? 0 : Math.max(0, 1 - distance / 180);
-      const age = now - clicked;
-      const ring = motionOff ? 0 : Math.exp(-Math.pow((distance - age * 220) / 35, 2)) * Math.max(0, 1 - age / 2);
+      let ring = 0;
+      for (const wave of waves) {
+        const radius = Math.hypot(x - wave.x, y - wave.y);
+        ring += Math.exp(-Math.pow((radius - wave.radius) / 35, 2)) * wave.strength;
+      }
       const scan = Math.pow(Math.max(0, Math.cos(ny * 13 - t * 1.7)), 16) * .22;
       const lane = (Math.floor(x / step) % 13 === 0 || Math.floor(y / line) % 11 === 0) ? .14 : 0;
       const value = Math.min(1, (ridge + scan + lane) * centerFade + wake * .8 + ring);
@@ -123,12 +135,52 @@ const mask = document.createElement('canvas'); mask.width = mask.height = 90;
 const mc = mask.getContext('2d', { willReadFrequently: true });
 const shapes = [];
 let elapsed = 0, previous = 0, offset = 0;
-let pointerX = 0, pointerY = 0;
 const sculpture = $('.ascii-sculpture');
-sculpture.addEventListener('pointermove', event => {
-  const r = sculpture.getBoundingClientRect(); pointerX = (event.clientX - r.left) / r.width - .5; pointerY = (event.clientY - r.top) / r.height - .5;
+const sculptureCanvas = $('#logo-ascii');
+const orbit = { yaw: 0, pitch: 0, vx: 0, vy: 0, pointer: null, x: 0, y: 0, time: 0 };
+sculptureCanvas.tabIndex = 0;
+sculptureCanvas.setAttribute('aria-label', 'Sculpture ASCII ARENA. Glisser pour tourner ; flèches au clavier ; touche Début pour réinitialiser.');
+sculptureCanvas.addEventListener('pointerdown', event => {
+  if (event.button !== 0 || orbit.pointer !== null) return;
+  event.stopPropagation();
+  orbit.pointer = event.pointerId; orbit.x = event.clientX; orbit.y = event.clientY; orbit.time = performance.now();
+  orbit.vx = orbit.vy = 0;
+  sculptureCanvas.setPointerCapture(event.pointerId);
+  sculptureCanvas.focus({ preventScroll: true });
+  sculpture.classList.add('dragging');
 });
-sculpture.addEventListener('pointerleave', () => { pointerX = pointerY = 0; });
+sculptureCanvas.addEventListener('pointermove', event => {
+  if (event.pointerId !== orbit.pointer) return;
+  const dx = (event.clientX - orbit.x) * .008, dy = (event.clientY - orbit.y) * .008;
+  const dt = Math.max(.016, (performance.now() - orbit.time) / 1000);
+  orbit.yaw += dx; orbit.pitch = Math.max(-1.2, Math.min(1.2, orbit.pitch + dy));
+  orbit.vx = Math.max(-4, Math.min(4, dx / dt)); orbit.vy = Math.max(-3, Math.min(3, dy / dt));
+  orbit.x = event.clientX; orbit.y = event.clientY; orbit.time = performance.now();
+  redrawLogo();
+});
+function releaseOrbit(event) {
+  if (event.pointerId !== orbit.pointer) return;
+  if (event.type === 'pointercancel' || performance.now() - orbit.time > 100) orbit.vx = orbit.vy = 0;
+  orbit.pointer = null;
+  sculpture.classList.remove('dragging');
+  if (sculptureCanvas.hasPointerCapture(event.pointerId)) sculptureCanvas.releasePointerCapture(event.pointerId);
+}
+sculptureCanvas.addEventListener('pointerup', releaseOrbit);
+sculptureCanvas.addEventListener('pointercancel', releaseOrbit);
+sculptureCanvas.addEventListener('lostpointercapture', releaseOrbit);
+function resetOrbit() { orbit.yaw = orbit.pitch = orbit.vx = orbit.vy = 0; redrawLogo(); }
+sculptureCanvas.addEventListener('dblclick', resetOrbit);
+sculptureCanvas.addEventListener('keydown', event => {
+  if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home'].includes(event.key)) return;
+  event.preventDefault();
+  if (event.key === 'Home') { resetOrbit(); return; }
+  orbit.vx = orbit.vy = 0;
+  if (event.key === 'ArrowLeft') orbit.yaw -= .18;
+  if (event.key === 'ArrowRight') orbit.yaw += .18;
+  if (event.key === 'ArrowUp') orbit.pitch = Math.max(-1.2, orbit.pitch - .18);
+  if (event.key === 'ArrowDown') orbit.pitch = Math.min(1.2, orbit.pitch + .18);
+  redrawLogo();
+});
 function buildShapes() {
   for (let kind = 0; kind < 2; kind++) {
     mc.clearRect(0, 0, 90, 90);
@@ -159,15 +211,22 @@ function buildShapes() {
 const names = ['01 — ARENA', '02 — CODE', '03 — LOGIQUE'];
 const redrawLogo = engine($('#logo-ascii'), (ctx, w, h, now) => {
   if (shapes.length < 3) return;
-  if (previous && !motionOff && !logoPaused) elapsed += Math.min(1, now - previous);
+  const dt = previous ? Math.min(.05, now - previous) : 0;
+  if (previous && !motionOff && !logoPaused && orbit.pointer === null) elapsed += Math.min(1, now - previous);
+  if (orbit.pointer === null && !motionOff && !logoPaused) {
+    orbit.yaw += orbit.vx * dt;
+    orbit.pitch = Math.max(-1.2, Math.min(1.2, orbit.pitch + orbit.vy * dt));
+    orbit.vx *= Math.exp(-dt * 5); orbit.vy *= Math.exp(-dt * 5);
+  }
   previous = now;
   const time = elapsed + offset;
   const state = Math.floor(time / 7) % 3;
   const progress = Math.max(0, Math.min(1, (time % 7 - 5) / 2));
   const blend = progress * progress * (3 - 2 * progress);
   const from = shapes[state], to = shapes[(state + 1) % 3];
-  const ry = state === 2 ? time * .35 : Math.sin(time * .65) * .75 + pointerX * .5;
-  const rx = -.16 + Math.sin(time * .4) * .1 + pointerY * .25;
+  const ry = orbit.yaw + (state === 2 ? time * .35 : Math.sin(time * .65) * .75);
+  const rx = orbit.pitch - .16 + Math.sin(time * .4) * .1;
+  sculptureCanvas.dataset.rotation = `${orbit.yaw.toFixed(3)},${orbit.pitch.toFixed(3)}`;
   const scale = Math.min(w * .36, h * .4);
   const cellX = 4.2, cellY = 6;
   const cells = new Map();

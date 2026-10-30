@@ -37,3 +37,5 @@ La seconde direction reprend la composition Figma : logo centré, slogan sur une
 Le dossier `dist` est statique et peut être hébergé indépendamment. Aucun déploiement et aucun push ne sont effectués dans ce projet.
 
 Le fond technique est partagé entre les sections sombres (ASCII plus contrasté, tracés de circuits et signaux mobiles). Les joints blancs/noirs utilisent des pixels de transition ; les carrés latéraux dérivent lentement. Les lignes du programme se décalent de 10 px au survol ou au focus clavier, avec ombre et accent lumineux.
+
+La sculpture accepte un glisser à la souris ou au toucher, avec inertie au relâchement. Les flèches permettent la rotation au clavier ; Début ou un double-clic réinitialise l’orientation. Les clics du fond créent des ondes indépendantes, limitées à huit, sans relancer les précédentes ; ce comportement est couvert par le test de régression dans `tests.mjs`. Le texte de présentation est agrandi et les pixels latéraux sont décalés vers la droite avec des déformations horizontales plus marquées.
