@@ -34,7 +34,7 @@ La seconde direction reprend la composition Figma : logo centré, slogan sur une
 
 ## Hébergement
 
-Le dossier `dist` est statique et peut être hébergé indépendamment. Aucun déploiement et aucun push ne sont effectués dans ce projet.
+Le dossier `dist` est statique et peut être hébergé indépendamment. Le code source est conservé dans le dépôt GitHub privé `ZAfadi/arena-26`. Le site n’est pas encore déployé.
 
 Le fond technique est partagé entre les sections sombres (ASCII plus contrasté, tracés de circuits et signaux mobiles). La section de présentation utilise une grille à deux colonnes, un corps de texte de 19 à 21 px sur grand écran et de 17 px sur mobile. Le décor de pixels est limité au bord droit et conserve sa géométrie ; seuls quelques pixels changent brièvement d’opacité. Les lignes du programme se décalent de 10 px au survol ou au focus clavier, avec ombre et accent lumineux.
 
