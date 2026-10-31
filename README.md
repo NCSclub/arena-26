@@ -34,7 +34,7 @@ La seconde direction reprend la composition Figma : logo centré, slogan sur une
 
 ## Hébergement
 
-Le dossier `dist` est statique et peut être hébergé indépendamment. Le code source est conservé dans le dépôt GitHub privé `ZAfadi/arena-26`. Le site n’est pas encore déployé.
+Le dossier `dist` est statique et peut être hébergé indépendamment. Le code source est conservé dans le dépôt GitHub privé `ZAfadi/arena-26`. Le déploiement Vercel utilise `vercel.json` pour publier uniquement le dossier `dist`, sans serveur Node ni étape de compilation. Le projet Vercel est relié au dépôt privé et à sa branche `main`.
 
 Le fond technique est partagé entre les sections sombres (ASCII plus contrasté, tracés de circuits et signaux mobiles). La section de présentation utilise une grille à deux colonnes, un corps de texte de 19 à 21 px sur grand écran et de 17 px sur mobile. Les transitions de la présentation et du pied de page occupent une zone large et sont redessinées en continu sur canvas. Leurs pixels restent carrés, avec une dissolution animée sans étirement. Les lignes du programme se décalent de 10 px au survol ou au focus clavier, avec ombre et accent lumineux.
 
