@@ -25,7 +25,7 @@ export const translations = {
     "aboutLeadTwo": "logic, and speed.",
     "aboutParagraphOne": "Team up and solve as many challenges as you can before time runs out. Programming, puzzles, reverse coding: every solution earns you points.",
     "aboutParagraphTwo": "Share ideas, divide the problems, and find your rhythm. Here, clear thinking matters as much as speed.",
-    "sculptureLabel": "Animated ASCII sculpture: ARENA logo, code, and logic cube",
+    "sculptureLabel": "Animated ASCII sculpture: ARENA logo and code",
     "sculptureHelp": "ARENA ASCII sculpture. Drag to rotate; use arrow keys; press Home to reset.",
     "drag": "DRAG TO EXPLORE",
     "nextShape": "Change the sculpture shape",
@@ -169,7 +169,6 @@ export const translations = {
     "export": "Export my answers",
     "exported": "Answers exported. No registration has been sent to the organisers.",
     "registrationPageTitle": "Registration — ARENA 26",
-    "morphLogic": "03 — LOGIC",
     "faqArticle": ""
   },
   "fr": {
@@ -198,7 +197,7 @@ export const translations = {
     "aboutLeadTwo": "de logique et de vitesse.",
     "aboutParagraphOne": "En équipe, résous un maximum de défis dans un temps limité. Programmation, énigmes, reverse coding : chaque solution te fait gagner des points.",
     "aboutParagraphTwo": "Confronte tes idées, répartis les problèmes et trouve le bon rythme. Ici, la réflexion compte autant que la rapidité.",
-    "sculptureLabel": "Sculpture ASCII animée : logo ARENA, code et cube de logique",
+    "sculptureLabel": "Sculpture ASCII animée : logo ARENA et code",
     "sculptureHelp": "Sculpture ASCII ARENA. Glisser pour tourner ; flèches au clavier ; touche Début pour réinitialiser.",
     "drag": "GLISSER POUR EXPLORER",
     "nextShape": "Changer la forme de la sculpture",
@@ -342,7 +341,6 @@ export const translations = {
     "export": "Exporter mes réponses",
     "exported": "Réponses exportées. Aucune inscription n’a été envoyée à l’organisation.",
     "registrationPageTitle": "Inscription — ARENA 26",
-    "morphLogic": "03 — LOGIQUE",
     "faqArticle": "LE "
   }
 };

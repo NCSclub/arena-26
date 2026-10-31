@@ -17,7 +17,7 @@ Ouvrir http://127.0.0.1:4173. Vérifications : `npm test`.
 - Landing page responsive inspirée des frames Figma ARENA 26.
 - Anglais par défaut à la première visite, avec sélecteur EN / FR visible sur ordinateur et mobile. Le choix est mémorisé sur cet appareil ; le changement de langue conserve les réponses, l’étape du formulaire et l’état des animations.
 - Fond ASCII animé, sensible au pointeur et aux clics.
-- Logo ARENA original en sculpture ASCII sans cadre, avec rotation, perspective et transitions vers des balises de code et un cube de logique.
+- Logo ARENA original en sculpture ASCII sans cadre, avec rotation, perspective et transition vers des balises de code. Le point de vue revient automatiquement à sa position initiale après quelques secondes d'inactivité.
 - Animations automatiques au chargement avec interaction au pointeur et aux clics. Le bouton de pause mémorise le choix pour la session. Les canvas hors écran et les onglets masqués suspendent leur boucle.
 - Programme prévisionnel et FAQ dépliables.
 - Formulaire en trois étapes : profil, équipe/transport, vérification et export JSON.
