@@ -1,5 +1,6 @@
 import { addRipple } from './ripples.js';
 import { isWhitePixel } from './pixel-transition.js';
+import { t } from './i18n.js';
 const $ = selector => document.querySelector(selector);
 export let motionOff = sessionStorage.getItem('arena-motion') === 'off';
 let logoPaused = false;
@@ -128,7 +129,7 @@ const sculpture = $('.ascii-sculpture');
 const sculptureCanvas = $('#logo-ascii');
 const orbit = { yaw: 0, pitch: 0, vx: 0, vy: 0, pointer: null, x: 0, y: 0, time: 0 };
 sculptureCanvas.tabIndex = 0;
-sculptureCanvas.setAttribute('aria-label', 'Sculpture ASCII ARENA. Glisser pour tourner ; flèches au clavier ; touche Début pour réinitialiser.');
+sculptureCanvas.setAttribute('aria-label', t('sculptureHelp'));
 sculptureCanvas.addEventListener('pointerdown', event => {
   if (event.button !== 0 || orbit.pointer !== null) return;
   event.stopPropagation();
@@ -197,7 +198,12 @@ function buildShapes() {
   }
   shapes.push(cube);
 }
-const names = ['01 — ARENA', '02 — CODE', '03 — LOGIQUE'];
+let morphState = 0;
+function updateSculptureCopy() {
+  $('#morph-label').textContent = ['01 — ARENA', '02 — CODE', t('morphLogic')][morphState];
+  sculptureCanvas.setAttribute('aria-label', t('sculptureHelp'));
+  $('#morph-pause').setAttribute('aria-label', t(logoPaused ? 'resumeLogo' : 'pauseLogo'));
+}
 const redrawLogo = engine($('#logo-ascii'), (ctx, w, h, now) => {
   if (shapes.length < 3) return;
   const dt = previous ? Math.min(.05, now - previous) : 0;
@@ -239,7 +245,8 @@ const redrawLogo = engine($('#logo-ascii'), (ctx, w, h, now) => {
     ctx.fillText(ramp[Math.floor(light * (ramp.length - 1))], p.gx * cellX, p.gy * cellY);
   }
   ctx.globalAlpha = 1;
-  $('#morph-label').textContent = names[progress > .5 ? (state + 1) % 3 : state];
+  morphState = progress > .5 ? (state + 1) % 3 : state;
+  $('#morph-label').textContent = ['01 — ARENA', '02 — CODE', t('morphLogic')][morphState];
 });
 image.addEventListener('load', () => { buildShapes(); redrawLogo(); });
 if (image.complete && image.naturalWidth) { buildShapes(); redrawLogo(); }
@@ -248,18 +255,22 @@ $('#morph-pause').addEventListener('click', event => {
   logoPaused = !logoPaused; previous = 0;
   event.currentTarget.textContent = logoPaused ? '▷' : 'Ⅱ';
   event.currentTarget.setAttribute('aria-pressed', String(logoPaused));
-  event.currentTarget.setAttribute('aria-label', logoPaused ? 'Reprendre l’animation du logo' : 'Mettre l’animation du logo en pause');
+  event.currentTarget.setAttribute('aria-label', t(logoPaused ? 'resumeLogo' : 'pauseLogo'));
   redrawLogo();
 });
-function updateMotion() {
-  document.body.classList.toggle('no-motion', motionOff);
+function updateMotionCopy() {
   const toggle = $('#motion-toggle');
   toggle.setAttribute('aria-pressed', String(motionOff));
-  toggle.setAttribute('aria-label', motionOff ? 'Activer les animations' : 'Désactiver les animations');
-  toggle.innerHTML = `${motionOff ? '▷' : 'Ⅱ'} <span>${motionOff ? 'REPRENDRE' : 'PAUSE'}</span>`;
+  toggle.setAttribute('aria-label', t(motionOff ? 'enableMotion' : 'disableMotion'));
+  toggle.innerHTML = `${motionOff ? '▷' : 'Ⅱ'} <span>${t(motionOff ? 'resume' : 'pause')}</span>`;
+}
+function updateMotion() {
+  document.body.classList.toggle('no-motion', motionOff);
+  updateMotionCopy();
   previous = 0; engines.forEach(refresh => refresh());
 }
 $('#motion-toggle').addEventListener('click', () => {
   motionOff = !motionOff; sessionStorage.setItem('arena-motion', motionOff ? 'off' : 'on'); updateMotion();
 });
 updateMotion();
+document.addEventListener('languagechange', () => { updateSculptureCopy(); updateMotionCopy(); });

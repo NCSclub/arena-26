@@ -3,6 +3,30 @@ import assert from 'node:assert/strict';
 import { registrationPayload } from './dist/registration-data.js';
 import { addRipple } from './dist/ripples.js';
 import { isWhitePixel } from './dist/pixel-transition.js';
+import { resolveLanguage } from './dist/i18n.js';
+import { translations } from './dist/translations.js';
+import { readFile } from 'node:fs/promises';
+
+test('New visitors use English; only an explicit French preference selects French', () => {
+  for (const saved of [null, undefined, '', 'en', 'de', 'fr-FR']) assert.equal(resolveLanguage(saved), 'en');
+  assert.equal(resolveLanguage('fr'), 'fr');
+});
+
+test('Both languages cover every static and dynamic translation used by the site', async () => {
+  assert.deepEqual(Object.keys(translations.en).sort(), Object.keys(translations.fr).sort());
+  const html = await readFile(new URL('./dist/index.html', import.meta.url), 'utf8');
+  const keys = [...html.matchAll(/data-i18n(?:-(?:aria-label|placeholder|content))?="([^"]*)"/g)]
+    .flatMap(match => match[1].split(',')).filter(Boolean);
+  for (const file of ['app.js', 'visuals.js']) {
+    const source = await readFile(new URL(`./dist/${file}`, import.meta.url), 'utf8');
+    keys.push(...[...source.matchAll(/\bt\('([^']+)'\)/g)].map(match => match[1]));
+  }
+  for (const key of keys) {
+    assert.equal(typeof translations.en[key], 'string', `Missing English: ${key}`);
+    assert.equal(typeof translations.fr[key], 'string', `Missing French: ${key}`);
+  }
+  assert.match(html, /<html lang="en">/);
+});
 
 test('Pixel transitions evolve without input while keeping a solid white content edge', () => {
   let changes = 0;

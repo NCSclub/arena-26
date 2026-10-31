@@ -1,9 +1,11 @@
 import { registrationPayload } from './registration-data.js';
 import { motionOff } from './visuals.js';
+import { language, t } from './i18n.js';
 const $ = selector => document.querySelector(selector);
 history.scrollRestoration = 'manual';
 
 let currentStep = 0;
+let statusKey = '';
 const form = $('#registration-form');
 form.noValidate = true;
 function conditionalFields() {
@@ -19,25 +21,31 @@ form.addEventListener('change', conditionalFields);
 form.addEventListener('input', event => {
   if (event.target.setCustomValidity) event.target.setCustomValidity('');
   $('#form-status').textContent = '';
+  statusKey = '';
 });
+function validateInput(input) {
+  input.setCustomValidity('');
+  if (input.required && !input.value.trim()) input.setCustomValidity(t('required'));
+  else if (input.validity.typeMismatch) input.setCustomValidity(t('emailInvalid'));
+  else if (input.validity.patternMismatch) input.setCustomValidity(t('phoneInvalid'));
+  else if (input.validity.tooShort) input.setCustomValidity(t('tooShort'));
+}
 function validStep(index) {
   const controls = document.querySelectorAll(`[data-step="${index}"] input, [data-step="${index}"] select, [data-step="${index}"] textarea`);
   for (const input of controls) {
     if (input.disabled) continue;
-    if (input.required && !input.value.trim()) input.setCustomValidity('Merci de renseigner ce champ.');
-    else input.setCustomValidity('');
+    validateInput(input);
     if (!input.reportValidity()) return false;
   }
   return true;
 }
-const labels = { fullName: 'Nom complet', phoneNumber: 'Téléphone', email: 'E-mail', discordTag: 'Discord', university: 'Établissement', yearOfStudy: 'Année d’études', studentId: 'Matricule', teamName: 'Nom de l’équipe', expectations: 'Tes attentes' };
 function payload() { return registrationPayload(Object.fromEntries(new FormData(form))); }
 function renderReview() {
   const values = payload();
   const groups = [
-    ['TON PROFIL', ['fullName', 'phoneNumber', 'email', 'discordTag', 'university', 'yearOfStudy', 'studentId'].map(key => [labels[key], values[key]])],
-    ['TON ÉQUIPE', [['Participation', values.hasTeam ? 'En équipe' : 'En solo'], ...(values.hasTeam ? [['Équipe', values.teamName], ['Coéquipiers', values.teammates.join(', ') || 'Non renseignés']] : [])]],
-    ['LE JOUR J', [['Transport', values.needsTransportation ? 'Demandé, selon disponibilité' : 'Autonome'], ...(values.needsTransportation ? [['Départ', values.transportationAddress]] : []), ['Tes attentes', values.expectations]]]
+    [t('profileHeading'), ['fullName', 'phoneNumber', 'email', 'discordTag', 'university', 'yearOfStudy', 'studentId'].map(key => [t(key), values[key]])],
+    [t('teamHeading'), [[t('participation'), t(values.hasTeam ? 'teamParticipation' : 'soloParticipation')], ...(values.hasTeam ? [[t('teamName'), values.teamName], [t('teammates'), values.teammates.join(', ') || t('notProvided')]] : [])]],
+    [t('eventDay'), [[t('transport'), t(values.needsTransportation ? 'transportRequested' : 'transportIndependent')], ...(values.needsTransportation ? [[t('departure'), values.transportationAddress]] : []), [t('expectations'), values.expectations]]]
   ];
   $('#review').replaceChildren(...groups.map(([title, entries]) => {
     const section = document.createElement('section'); section.className = 'review-group';
@@ -52,6 +60,14 @@ function renderReview() {
     section.append(list); return section;
   }));
 }
+function updateFormCopy() {
+  $('#form-progress').textContent = `${t('step')} 0${currentStep + 1} / 03`;
+  $('#next-step').replaceChildren(document.createTextNode(t(currentStep === 2 ? 'export' : 'continue') + ' '));
+  const arrow = document.createElement('span'); arrow.setAttribute('aria-hidden', 'true');
+  arrow.textContent = currentStep === 2 ? '↓' : '→'; $('#next-step').append(arrow);
+  $('#form-status').textContent = statusKey ? t(statusKey) : '';
+  if (currentStep === 2) renderReview();
+}
 function showStep(index, focus = true) {
   currentStep = index;
   document.querySelectorAll('.form-step').forEach((step, i) => { step.hidden = i !== index; });
@@ -60,11 +76,8 @@ function showStep(index, focus = true) {
     if (i === index) step.setAttribute('aria-current', 'step'); else step.removeAttribute('aria-current');
   });
   $('#previous-step').hidden = index === 0;
-  $('#form-progress').textContent = `ÉTAPE 0${index + 1} / 03`;
   $('#step-counter').textContent = `PLAYER_SETUP / 0${index + 1}`;
-  $('#next-step').innerHTML = index === 2 ? 'Exporter mes réponses <span aria-hidden="true">↓</span>' : 'Continuer <span aria-hidden="true">→</span>';
-  $('#form-status').textContent = '';
-  if (index === 2) renderReview();
+  statusKey = ''; updateFormCopy();
   if (focus) {
     const heading = $(`[data-step="${index}"] h2`); heading.tabIndex = -1; heading.focus({ preventScroll: true });
     $('.form-panel').scrollIntoView({ behavior: motionOff ? 'instant' : 'smooth', block: 'start' });
@@ -81,14 +94,17 @@ form.addEventListener('submit', event => {
   showStep(2, false);
   const blob = new Blob([JSON.stringify(payload(), null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'arena-26-mes-reponses.json'; anchor.click();
+  const anchor = document.createElement('a'); anchor.href = url; anchor.download = language === 'fr' ? 'arena-26-mes-reponses.json' : 'arena-26-my-answers.json'; anchor.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  $('#form-status').textContent = 'Réponses exportées. Aucune inscription n’a été envoyée à l’organisation.';
+  statusKey = 'exported'; $('#form-status').textContent = t(statusKey);
 });
+function updateTitle() {
+  document.title = location.hash === '#inscription' ? t('registrationPageTitle') : 'ARENA 26 — Think fast. Gain more.';
+}
 function route() {
   const registering = location.hash === '#inscription';
   $('#landing').hidden = registering; $('#registration').hidden = !registering;
-  document.title = registering ? 'Inscription — ARENA 26' : 'ARENA 26 — Think fast. Gain more.';
+  updateTitle();
   if (registering) {
     scrollTo({ top: 0, behavior: 'instant' });
     const heading = $('#registration-title'); heading.tabIndex = -1; heading.focus({ preventScroll: true });
@@ -96,4 +112,8 @@ function route() {
   else scrollTo({ top: 0, behavior: 'instant' });
 }
 window.addEventListener('hashchange', route);
+document.addEventListener('languagechange', () => {
+  updateTitle(); updateFormCopy();
+  [...form.elements].filter(input => input.validity?.customError).forEach(validateInput);
+});
 conditionalFields(); showStep(0, false); route();
