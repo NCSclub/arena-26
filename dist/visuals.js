@@ -1,25 +1,26 @@
 import { addRipple } from './ripples.js';
+import { isWhitePixel } from './pixel-transition.js';
 const $ = selector => document.querySelector(selector);
 export let motionOff = sessionStorage.getItem('arena-motion') === 'off';
 let logoPaused = false;
 const engines = [];
 
-const pixelEdge = document.createElement('div');
-pixelEdge.className = 'pixel-edge'; pixelEdge.setAttribute('aria-hidden', 'true');
-for (let row = 0; row < 68; row++) for (let column = 0; column < 14; column++) {
-  const noise = (Math.sin(row * 47.1 + column * 13.7) * 43758.54) % 1;
-  const white = Math.abs(noise) > column / 13;
-  if ((column < 7 && white) || (column >= 7 && !white)) continue;
-  const square = document.createElement('i');
-  square.className = white ? '' : 'dark';
-  Object.assign(square.style, { left: `${column / 14 * 100}%`, top: `${row / 68 * 100}%`, width: '7.2%', height: '1.5%' });
-  square.style.animationDelay = `${-((row * 1.7 + column * .8) % 9)}s`;
-  square.style.animationDuration = `${9 + (row + column) % 5}s`;
-  pixelEdge.append(square);
+for (const selector of ['.about', '.footer']) {
+  const canvas = document.createElement('canvas');
+  canvas.className = 'pixel-transition';
+  canvas.setAttribute('aria-hidden', 'true');
+  $(selector).append(canvas);
+  engine(canvas, (ctx, width, height, now) => {
+    const time = motionOff ? 0 : now;
+    const size = width < 220 ? 14 : 20;
+    const columns = Math.ceil(width / size);
+    const rows = Math.ceil(height / size);
+    ctx.fillStyle = '#fff';
+    for (let row = 0; row < rows; row++) for (let column = 0; column < columns; column++) {
+      if (isWhitePixel(column, row, columns, time)) ctx.fillRect(column * size, row * size, size + .5, size + .5);
+    }
+  });
 }
-$('.about').append(pixelEdge);
-$('.footer').append(pixelEdge.cloneNode(true));
-
 
 function engine(canvas, render) {
   const ctx = canvas.getContext('2d');

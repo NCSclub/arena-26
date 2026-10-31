@@ -2,6 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { registrationPayload } from './dist/registration-data.js';
 import { addRipple } from './dist/ripples.js';
+import { isWhitePixel } from './dist/pixel-transition.js';
+
+test('Pixel transitions evolve without input while keeping a solid white content edge', () => {
+  let changes = 0;
+  for (let row = 0; row < 40; row++) {
+    assert.equal(isWhitePixel(0, row, 20, 0), true);
+    assert.equal(isWhitePixel(19, row, 20, 2), false);
+    for (let column = 0; column < 20; column++) {
+      if (isWhitePixel(column, row, 20, 0) !== isWhitePixel(column, row, 20, 2)) changes++;
+    }
+  }
+  assert.ok(changes > 40);
+});
 
 test('Repeated background clicks preserve earlier ripple origins and start times', () => {
   let ripples = addRipple([], 40, 70, 10);
