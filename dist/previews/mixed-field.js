@@ -1,3 +1,5 @@
+import { createFluidWake } from './fluid-wake.js';
+
 // Visual reference: https://www.shadcn.io/background
 export function createAsciiField(canvas) {
   const gl = canvas.getContext('webgl2', { alpha: false, antialias: false });
@@ -7,7 +9,8 @@ export function createAsciiField(canvas) {
   const density = `#version 300 es
   precision highp float;
   uniform vec2 grid,resolution,cell;
-  uniform vec4 clearArea,wakes[8];
+  uniform vec4 clearArea;
+  uniform sampler2D fluid;
   uniform float clock,scale;
   out vec4 color;
   const float BAYER[16]=float[16](0.,8.,2.,10.,12.,4.,14.,6.,3.,11.,1.,9.,15.,7.,13.,5.);
@@ -20,12 +23,16 @@ export function createAsciiField(canvas) {
     vec2 p=(uv-.5)*vec2(aspect,1.)*scale;
     vec2 warp=vec2(fbm(p*1.1+vec2(0.,t)),fbm(p*1.1+vec2(5.2,1.3-t)));
     float tone=smoothstep(.32,.68,fbm(p*1.4+warp*1.5+vec2(t*.7,-t*.4)));
-    float wake=0.;
-    for(int i=0;i<8;i++){
-      vec2 delta=(uv-wakes[i].xy)*vec2(aspect,1.);
-      wake+=exp(-dot(delta,delta)/max(.0001,wakes[i].z))*wakes[i].w;
-    }
-    wake=smoothstep(0.,1.,clamp(wake,0.,1.));
+    ivec2 size=textureSize(fluid,0),last=size-1;
+    vec2 samplePoint=uv*vec2(size)-.5,fraction=fract(samplePoint);
+    ivec2 low=ivec2(floor(samplePoint));
+    float a=texelFetch(fluid,clamp(low,ivec2(0),last),0).a;
+    float b=texelFetch(fluid,clamp(low+ivec2(1,0),ivec2(0),last),0).a;
+    float c=texelFetch(fluid,clamp(low+ivec2(0,1),ivec2(0),last),0).a;
+    float d=texelFetch(fluid,clamp(low+ivec2(1),ivec2(0),last),0).a;
+    float signal=mix(mix(a,b,fraction.x),mix(c,d,fraction.x),fraction.y);
+    float wake=clamp(signal*.9/.38,0.,1.);
+    wake=wake*wake*(3.-2.*wake);
     tone+=(1.-tone)*wake*.92;
     float keep=smoothstep(0.,.16,uv.y)*smoothstep(0.,.16,1.-uv.y);
     vec2 halfSize=clearArea.zw*.5*vec2(aspect,1.);
@@ -40,7 +47,7 @@ export function createAsciiField(canvas) {
     int word[11]=int[11](4,5,6,7,8,9,10,11,12,13,14);
     int letter=int(mod(index.x+floor(hash(vec2(index.y,7.13))*11.),11.));
     float glyph=tier<4.?tier:float(word[letter]);
-    if(tier>=4.&&hash(index+vec2(3.1,8.7))<wake*.7){
+    if(tier>=4.&&hash(index+vec2(3.1,8.7))<max(wake*.9-.2,0.)){
       glyph=15.+floor(hash(index+floor(clock*10.)*vec2(.71,.37))*11.);
     }
     float strength=tier<4.?.32+tier*.07:.58+.32*tone;
@@ -73,7 +80,7 @@ export function createAsciiField(canvas) {
     shaders.forEach(shader=>gl.deleteShader(shader));return result;
   }
   const fieldProgram=program(density),glyphProgram=program(glyphs),vao=gl.createVertexArray();
-  const names=['grid','resolution','clock','scale','clearArea','wakes[0]','tones','atlas','cell','count'];
+  const names=['grid','resolution','clock','scale','clearArea','fluid','tones','atlas','cell','count'];
   const locations=program=>Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
   const fieldUniforms=locations(fieldProgram),glyphUniforms=locations(glyphProgram);
   gl.bindVertexArray(vao);
@@ -86,8 +93,9 @@ export function createAsciiField(canvas) {
   const tones=texture(),framebuffer=gl.createFramebuffer(),atlas=texture();
   const characters=' ·:+BACKGROUNDS#%&*=/<>?$@';
   let width=0,height=0,columns=0,rows=0,cellX=0,cellY=0,paused=false,elapsed=0,last=0,frame;
-  let clearArea=[0,0,0,0],wakePoints=[],previous=null;
-  const wakeData=new Float32Array(32);
+  let clearArea=[0,0,0,0];
+  const fluid=createFluidWake(gl,program);
+  canvas.dataset.interaction="fluid";
   function resize(){
     const rect=canvas.getBoundingClientRect(),dpr=Math.min(devicePixelRatio,2);
     width=Math.max(1,Math.round(rect.width*dpr));height=Math.max(1,Math.round(rect.height*dpr));
@@ -112,17 +120,16 @@ export function createAsciiField(canvas) {
     const left=Math.min(...bounds.map(b=>b.left)),top=Math.min(...bounds.map(b=>b.top));
     const right=Math.max(...bounds.map(b=>b.right)),bottom=Math.max(...bounds.map(b=>b.bottom));
     clearArea=[(left-rect.left)/rect.width,(top-rect.top)/rect.height,(right-left)/rect.width,(bottom-top)/rect.height];
+    fluid.resize(width/height);
     draw();
   }
   function draw(){
     if(!width||!height)return;
-    wakeData.fill(0);
-    wakePoints=wakePoints.filter(point=>elapsed-point.time<2.4);
-    wakePoints.slice(-8).forEach((point,i)=>wakeData.set([point.x,point.y,.0018,Math.exp(-(elapsed-point.time)*2.4)*.8],i*4));
     gl.useProgram(fieldProgram);gl.bindFramebuffer(gl.FRAMEBUFFER,framebuffer);gl.viewport(0,0,columns,rows);
     gl.uniform2f(fieldUniforms.grid,columns,rows);gl.uniform2f(fieldUniforms.resolution,width,height);
     gl.uniform2f(fieldUniforms.cell,cellX,cellY);gl.uniform1f(fieldUniforms.clock,elapsed);gl.uniform1f(fieldUniforms.scale,innerWidth<760?1.6:1);
-    gl.uniform4fv(fieldUniforms.clearArea,clearArea);gl.uniform4fv(fieldUniforms['wakes[0]'],wakeData);
+    gl.uniform4fv(fieldUniforms.clearArea,clearArea);
+    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,fluid.texture);gl.uniform1i(fieldUniforms.fluid,0);
     gl.drawArrays(gl.TRIANGLES,0,3);
     gl.useProgram(glyphProgram);gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,width,height);
     gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tones);gl.uniform1i(glyphUniforms.tones,0);
@@ -131,22 +138,22 @@ export function createAsciiField(canvas) {
     gl.drawArrays(gl.TRIANGLES,0,3);canvas.dataset.frames=String(Number(canvas.dataset.frames||0)+1);
   }
   function tick(now){
-    if(!paused&&!document.hidden&&now-last>=1000/30){elapsed+=last?Math.min(.05,(now-last)/1000):0;draw();last=now;}
+    const cadence=fluid.active?1000/60:1000/30;
+    if(!paused&&!document.hidden&&now-last>=cadence-1){
+      const delta=last?Math.min(.05,(now-last)/1000):0;
+      elapsed+=delta;fluid.update(delta);draw();last=now;
+      canvas.dataset.fluidSteps=String(fluid.steps);
+    }
     if(paused||document.hidden)last=now;
     frame=requestAnimationFrame(tick);
   }
   function move(event){
-    if(paused||event.target.closest('a,button'))return;
-    const r=canvas.getBoundingClientRect(),point={x:(event.clientX-r.left)/r.width,y:(event.clientY-r.top)/r.height,time:elapsed};
-    if(previous){
-      const distance=Math.hypot((point.x-previous.x)*r.width,(point.y-previous.y)*r.height);
-      const steps=Math.min(8,Math.max(1,Math.ceil(distance/18)));
-      for(let i=1;i<=steps;i++)wakePoints.push({x:previous.x+(point.x-previous.x)*i/steps,y:previous.y+(point.y-previous.y)*i/steps,time:elapsed});
-    }else wakePoints.push(point);
-    wakePoints=wakePoints.slice(-8);previous=point;
+    if(paused)return;
+    const r=canvas.getBoundingClientRect();
+    fluid.point((event.clientX-r.left)/r.width,(event.clientY-r.top)/r.height,performance.now());
   }
-  const leave=()=>{previous=null;};
-  window.addEventListener('pointermove',move,{passive:true});window.addEventListener('pointerdown',move,{passive:true});document.documentElement.addEventListener('pointerleave',leave);
+  const leave=()=>fluid.leave();
+  window.addEventListener('pointermove',move,{passive:true});window.addEventListener('pointerdown',move,{passive:true});document.documentElement.addEventListener('pointerleave',leave);window.addEventListener('pointercancel',leave);
   const observer=new ResizeObserver(resize);observer.observe(canvas);observer.observe(document.querySelector('.hero-content'));resize();frame=requestAnimationFrame(tick);
-  return {pause(){paused=true;},play(){paused=false;last=0;},destroy(){cancelAnimationFrame(frame);observer.disconnect();window.removeEventListener('pointermove',move);window.removeEventListener('pointerdown',move);document.documentElement.removeEventListener('pointerleave',leave);gl.deleteTexture(tones);gl.deleteTexture(atlas);gl.deleteFramebuffer(framebuffer);gl.deleteVertexArray(vao);gl.deleteProgram(fieldProgram);gl.deleteProgram(glyphProgram);}};
+  return {pause(){paused=true;},play(){paused=false;last=0;},destroy(){cancelAnimationFrame(frame);observer.disconnect();window.removeEventListener('pointermove',move);window.removeEventListener('pointerdown',move);document.documentElement.removeEventListener('pointerleave',leave);window.removeEventListener('pointercancel',leave);fluid.destroy();gl.deleteTexture(tones);gl.deleteTexture(atlas);gl.deleteFramebuffer(framebuffer);gl.deleteVertexArray(vao);gl.deleteProgram(fieldProgram);gl.deleteProgram(glyphProgram);}};
 }
