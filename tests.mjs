@@ -1,3 +1,4 @@
+import { remainingTime } from "./dist/countdown.js";
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { registrationPayload } from './dist/registration-data.js';
@@ -96,4 +97,13 @@ test('Team export preserves populated teammates and requested transport', () => 
   assert.deepEqual(data.teammates, ['Alice', 'Bob']);
   assert.equal(data.needsTransportation, true);
   assert.equal(data.transportationAddress, 'Algiers');
+});
+
+
+test('Countdown uses an absolute start time and rolls over days and seconds correctly', () => {
+  const start = '2026-12-01T09:00:00+01:00';
+  assert.deepEqual(remainingTime(start, Date.parse('2026-11-30T06:58:59Z')), {total: 90061, days: 1, hours: 1, minutes: 1, seconds: 1});
+  assert.deepEqual(remainingTime(start, Date.parse('2026-12-01T08:00:01Z')), {total: 0, days: 0, hours: 0, minutes: 0, seconds: 0});
+  assert.equal(remainingTime(''), null);
+  assert.equal(remainingTime('not a date'), null);
 });

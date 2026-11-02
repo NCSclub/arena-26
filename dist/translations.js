@@ -1,5 +1,14 @@
 export const translations = {
   "en": {
+    "countdownDays": "DAYS",
+    "countdownHours": "HOURS",
+    "countdownMinutes": "MINUTES",
+    "countdownSeconds": "SECONDS",
+    "countdownPending": "AWAITING DATE",
+    "countdownRunning": "COUNTDOWN ACTIVE",
+    "countdownLive": "THE ARENA IS OPEN",
+    "countdownDateSoon": "START TIME TO BE ANNOUNCED",
+
     "skip": "Skip to content",
     "homeLabel": "ARENA 26, home",
     "navLabel": "Main navigation",
@@ -172,6 +181,15 @@ export const translations = {
     "faqArticle": ""
   },
   "fr": {
+    "countdownDays": "JOURS",
+    "countdownHours": "HEURES",
+    "countdownMinutes": "MINUTES",
+    "countdownSeconds": "SECONDES",
+    "countdownPending": "DATE À VENIR",
+    "countdownRunning": "COMPTE À REBOURS",
+    "countdownLive": "L’ARÈNE EST OUVERTE",
+    "countdownDateSoon": "HORAIRE À CONFIRMER",
+
     "skip": "Aller au contenu",
     "homeLabel": "ARENA 26, accueil",
     "navLabel": "Navigation principale",

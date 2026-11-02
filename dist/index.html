@@ -16,7 +16,7 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     />
     <link rel="stylesheet" href="style.css" />
-    <script type="module" src="app.js"></script>
+    <script type="module" src="app.js?v=ascii-countdown"></script>
   </head>
   <body>
     <svg class="logo-filter" aria-hidden="true"><defs><filter id="transparent-logo" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  3 3 3 0 -0.4"/></filter></defs></svg>
@@ -101,17 +101,19 @@
             <p class="hero-description" data-i18n="heroDescription">
               Code is your playing field. Time is your opponent.
             </p>
-            <div class="event-date">
-              <span class="mono" data-i18n="nextChallenge"
-                >THE NEXT CHALLENGE IS COMING</span
-              >
-              <div
-                aria-label="Date to be announced"
-                data-i18n-aria-label="dateLabel"
-              >
-                <span>20</span><b>:</b><span>26</span
-                ><i data-i18n="date,dateSoon">DATE<br />COMING SOON ↗</i>
+            <div class="event-countdown" data-event-start="">
+              <div class="countdown-topline mono">
+                <span data-i18n="nextChallenge">THE NEXT CHALLENGE IS COMING</span>
+                <span class="countdown-indicator" data-countdown-status>AWAITING DATE</span>
               </div>
+              <div class="countdown-face" role="timer" aria-live="off" aria-label="Event start time to be announced">
+                <div class="countdown-unit"><canvas data-countdown-unit="days" aria-hidden="true"></canvas><span data-i18n="countdownDays">DAYS</span></div>
+                <div class="countdown-unit"><canvas data-countdown-unit="hours" aria-hidden="true"></canvas><span data-i18n="countdownHours">HOURS</span></div>
+                <div class="countdown-unit"><canvas data-countdown-unit="minutes" aria-hidden="true"></canvas><span data-i18n="countdownMinutes">MINUTES</span></div>
+                <div class="countdown-unit"><canvas data-countdown-unit="seconds" aria-hidden="true"></canvas><span data-i18n="countdownSeconds">SECONDS</span></div>
+                <span class="countdown-accessible" data-countdown-readable>Start time to be announced</span>
+              </div>
+              <p class="countdown-caption" data-countdown-caption>START TIME TO BE ANNOUNCED</p>
             </div>
             <div class="hero-actions">
               <a class="button primary" href="#inscription" data-i18n="register"

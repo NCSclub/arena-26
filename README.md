@@ -31,7 +31,7 @@ Ouvrir http://127.0.0.1:4173. Vérifications : `npm test`.
 
 ## À configurer avant ouverture des inscriptions
 
-La date, le lieu, les horaires définitifs et les modalités du transport doivent être confirmés par l’organisation. Aucun compte à rebours artificiel n’est affiché.
+La date, le lieu, les horaires définitifs et les modalités du transport doivent être confirmés par l’organisation. Le compte à rebours du hero attend la date officielle : renseigner un horodatage ISO avec fuseau dans `data-event-start` de `dist/index.html`. Sans date, il affiche des tirets et un état explicite, sans échéance inventée.
 
 Le formulaire est un aperçu fonctionnel : il valide les réponses et permet un export local. Aucun endpoint d’inscription n’est configuré et aucune donnée n’est transmise ou enregistrée durablement. Brancher le service de réception, la validation côté serveur et la gestion des erreurs avant d’activer de véritables inscriptions.
 
@@ -49,4 +49,6 @@ La sculpture accepte un glisser à la souris ou au toucher, avec inertie au rel�
 
 Les textes anglais et français sont centralisés dans `dist/translations.js`. `dist/i18n.js` met à jour les nœuds de texte et les attributs accessibles sans recréer les champs ni les canvas. Les messages de validation, le récapitulatif, les contrôles d’animation et le titre de la page suivent la langue sélectionnée. Le HTML initial est en anglais, y compris sans JavaScript ; la préférence explicite est enregistrée sous `arena-language` dans `localStorage`, avec repli sur l’anglais si le stockage est indisponible.
 
-La FAQ dispose d’une surface sombre presque opaque, d’une bordure fine et d’un espacement interne adapté aux petits écrans. Les questions utilisent une taille de 16 à 18 px et les réponses 15 px, avec un contraste indépendant des formations ASCII et du passage du curseur.
+La FAQ conserve sa typographie, sa grille et ses espacements d’origine. Un dégradé noir discret derrière la section protège la lisibilité du texte sans ajouter de carte ni de nouvelle bordure.
+
+Le hero utilise `dist/countdown.js` pour afficher les jours, heures, minutes et secondes en caractères ASCII sur une surface claire. Les chiffres se décodent progressivement à chaque changement. Le calcul utilise l’échéance absolue et se resynchronise après le retour sur l’onglet ; les animations respectent le bouton de pause et la visibilité. Les libellés suivent la langue choisie et le compteur possède une description accessible sans annonces vocales répétées chaque seconde. Les tests couvrent les unités, le fuseau, une échéance passée et une date manquante ou invalide.

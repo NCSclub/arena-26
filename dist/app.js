@@ -1,3 +1,4 @@
+import { initCountdown } from "./countdown.js";
 import { registrationPayload } from "./registration-data.js";
 import { motionOff } from "./visuals.js";
 import { language, t } from "./i18n.js";
@@ -231,3 +232,5 @@ document.addEventListener("languagechange", () => {
 conditionalFields();
 showStep(0, false);
 route();
+
+initCountdown(document.querySelector(".event-countdown"));
