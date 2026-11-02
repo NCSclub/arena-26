@@ -1,10 +1,20 @@
 import { addRipple } from "./ripples.js";
 import { isWhitePixel } from "./pixel-transition.js";
 import { t } from "./i18n.js";
+import { backgroundSignal, resolveBackground } from "./background-patterns.js";
 const $ = (selector) => document.querySelector(selector);
 export let motionOff = sessionStorage.getItem("arena-motion") === "off";
 let logoPaused = false;
 const engines = [];
+let backgroundMode = 'circuit';
+try { backgroundMode = resolveBackground(localStorage.getItem('arena-background')); } catch {}
+const backgroundPicker = document.querySelector('#background-mode');
+backgroundPicker.value = backgroundMode;
+backgroundPicker.addEventListener('change', () => {
+  backgroundMode = resolveBackground(backgroundPicker.value);
+  try { localStorage.setItem('arena-background', backgroundMode); } catch {}
+  engines.forEach(refresh => refresh());
+});
 
 for (const selector of [".about", ".footer"]) {
   const canvas = document.createElement("canvas");
@@ -125,21 +135,17 @@ document.querySelectorAll('[data-ascii="background"]').forEach((canvas) => {
           strength: 1 - (now - ripple.time) / 2,
         }));
     canvas.dataset.ripples = String(waves.length);
-    const t = motionOff ? 0 : now * 0.2;
+    const t = motionOff ? 0 : now * (backgroundMode === 'flow' ? 0.2 : 1);
+    canvas.dataset.background = backgroundMode;
     const step = w < 600 ? 8 : 9,
       line = 12;
     ctx.font = '9px "IBM Plex Mono", monospace';
-    const ramp = " .:+01<>[]=#";
+    const ramp = backgroundMode === 'rain' ? " .:010101<>#" : backgroundMode === 'wireframe' ? " .:+xX#" : " .:+01<>[]=#";
     for (let y = 0; y < h; y += line)
       for (let x = 0; x < w; x += step) {
         const nx = x / w,
           ny = y / h;
-        const warpX = nx + 0.06 * Math.sin(ny * 5 + t * 0.7);
-        const warpY = ny + 0.04 * Math.cos(nx * 6 - t * 0.6);
-        const flow =
-          Math.sin(warpX * 14 + warpY * 6 + t) *
-          Math.cos(warpY * 10 - warpX * 4 - t * 0.7);
-        const ridge = Math.pow(Math.max(0, 1 - Math.abs(flow - 0.2) * 2.2), 2);
+        const ridge = backgroundSignal(backgroundMode, x, y, w, h, t);
         const centerFade = Math.min(
           1,
           Math.pow(Math.abs(nx - 0.5) * 2.7, 1.3) +
@@ -153,8 +159,9 @@ document.querySelectorAll('[data-ascii="background"]').forEach((canvas) => {
           ring +=
             Math.exp(-Math.pow((radius - wave.radius) / 35, 2)) * wave.strength;
         }
-        const scan =
-          Math.pow(Math.max(0, Math.cos(ny * 13 - t * 1.7)), 16) * 0.22;
+        const scan = backgroundMode === 'flow' ?
+          Math.pow(Math.max(0, Math.cos(ny * 13 - t * 1.7)), 16) * 0.22
+          : 0;
         const lane =
           Math.floor(x / step) % 13 === 0 || Math.floor(y / line) % 11 === 0
             ? 0.14
@@ -341,7 +348,7 @@ function updateSculptureCopy() {
     morphState
   ];
   sculptureCanvas.setAttribute("aria-label", t("sculptureHelp"));
-  $("#morph-pause").setAttribute(
+  $("#morph-pause")?.setAttribute(
     "aria-label",
     t(logoPaused ? "resumeLogo" : "pauseLogo"),
   );
@@ -419,7 +426,7 @@ if (image.complete && image.naturalWidth) {
   buildShapes();
   redrawLogo();
 }
-$("#morph-pause").addEventListener("click", (event) => {
+$("#morph-pause")?.addEventListener("click", (event) => {
   logoPaused = !logoPaused;
   previous = 0;
   event.currentTarget.textContent = logoPaused ? "▷" : "Ⅱ";
