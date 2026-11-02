@@ -2378,3 +2378,12 @@ body {
 .schedule-list summary b::before, .schedule-list summary b::after { content: ''; position: absolute; width: 10px; height: 1px; background: currentColor; }
 .schedule-list summary b::after { transform: rotate(90deg); }
 @media (max-width: 700px) { .schedule-list summary { grid-template-columns: 50px minmax(0, 1fr) 24px; } }
+
+/* Shared ASCII field behind the landing page and registration view. */
+body { isolation: isolate; background: #000; }
+.site-ascii { height: 100%; }
+.logo-filter { position: absolute; width: 0; height: 0; overflow: hidden; }
+.hero-lockup, .brand img { filter: url(#transparent-logo); mix-blend-mode: normal; }
+.hero { user-select: none; -webkit-user-select: none; }
+.hero h1 { text-shadow: 0 1px 3px #000; }
+.event-date > div::before, .event-date > div::after { content: none; }

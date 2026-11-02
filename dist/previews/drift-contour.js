@@ -1,4 +1,4 @@
-import { createAsciiField } from './mixed-field.js';
+import { createAsciiField } from '../ascii-background.js';
 
 const status = document.querySelector('#preview-status');
 const pauseButton = document.querySelector('#preview-pause');

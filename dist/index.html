@@ -19,6 +19,8 @@
     <script type="module" src="app.js"></script>
   </head>
   <body>
+    <svg class="logo-filter" aria-hidden="true"><defs><filter id="transparent-logo" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  3 3 3 0 -0.4"/></filter></defs></svg>
+    <canvas class="ascii-bg site-ascii" data-ascii="background" aria-hidden="true"></canvas>
     <a class="skip-link" href="#main" data-i18n="skip">Skip to content</a>
     <header class="header wrap">
       <a
@@ -74,11 +76,6 @@
     </header>
     <main id="main">
       <div id="landing">
-        <canvas
-          class="ascii-bg site-ascii"
-          data-ascii="background"
-          aria-hidden="true"
-        ></canvas>
         <section class="hero" aria-labelledby="hero-title">
           <div
             class="hero-coordinate mono"
@@ -357,11 +354,6 @@
         hidden
         aria-labelledby="registration-title"
       >
-        <canvas
-          class="ascii-bg"
-          data-ascii="background"
-          aria-hidden="true"
-        ></canvas>
         <a class="back-link mono" href="#" data-i18n="back"
           >← BACK TO THE ARENA</a
         >

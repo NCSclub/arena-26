@@ -3,13 +3,12 @@ import { createFluidWake } from './fluid-wake.js';
 // Visual reference: https://www.shadcn.io/background
 export function createAsciiField(canvas) {
   const gl = canvas.getContext('webgl2', { alpha: false, antialias: false });
-  if (!gl) throw new Error('WebGL2 is required for this preview.');
+  if (!gl) throw new Error('WebGL2 is required for the ASCII background.');
   const vertex = `#version 300 es
   void main(){vec2 p=vec2(float((gl_VertexID<<1)&2),float(gl_VertexID&2));gl_Position=vec4(p*2.-1.,0.,1.);}`;
   const density = `#version 300 es
   precision highp float;
   uniform vec2 grid,resolution,cell;
-  uniform vec4 clearArea;
   uniform sampler2D fluid;
   uniform float clock,scale;
   out vec4 color;
@@ -35,9 +34,6 @@ export function createAsciiField(canvas) {
     wake=wake*wake*(3.-2.*wake);
     tone+=(1.-tone)*wake*.92;
     float keep=smoothstep(0.,.16,uv.y)*smoothstep(0.,.16,1.-uv.y);
-    vec2 halfSize=clearArea.zw*.5*vec2(aspect,1.);
-    vec2 offset=(uv-clearArea.xy-clearArea.zw*.5)*vec2(aspect,1.);
-    keep*=smoothstep(0.,.14,(length(offset/max(halfSize,vec2(.0001)))-1.)*min(halfSize.x,halfSize.y));
     tone*=keep;
     wake*=keep;
     ivec2 tile=ivec2(mod(index,4.));
@@ -80,7 +76,7 @@ export function createAsciiField(canvas) {
     shaders.forEach(shader=>gl.deleteShader(shader));return result;
   }
   const fieldProgram=program(density),glyphProgram=program(glyphs),vao=gl.createVertexArray();
-  const names=['grid','resolution','clock','scale','clearArea','fluid','tones','atlas','cell','count'];
+  const names=['grid','resolution','clock','scale','fluid','tones','atlas','cell','count'];
   const locations=program=>Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
   const fieldUniforms=locations(fieldProgram),glyphUniforms=locations(glyphProgram);
   gl.bindVertexArray(vao);
@@ -93,7 +89,6 @@ export function createAsciiField(canvas) {
   const tones=texture(),framebuffer=gl.createFramebuffer(),atlas=texture();
   const characters=' ·:+BACKGROUNDS#%&*=/<>?$@';
   let width=0,height=0,columns=0,rows=0,cellX=0,cellY=0,paused=false,elapsed=0,last=0,frame;
-  let clearArea=[0,0,0,0];
   const fluid=createFluidWake(gl,program);
   canvas.dataset.interaction="fluid";
   function resize(){
@@ -116,10 +111,6 @@ export function createAsciiField(canvas) {
     gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,atlas);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,sheet);
     gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tones);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,columns,rows,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
     gl.bindFramebuffer(gl.FRAMEBUFFER,framebuffer);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,tones,0);gl.bindFramebuffer(gl.FRAMEBUFFER,null);
-    const bounds=[...document.querySelector('.hero-content').children].map(element=>element.getBoundingClientRect());
-    const left=Math.min(...bounds.map(b=>b.left)),top=Math.min(...bounds.map(b=>b.top));
-    const right=Math.max(...bounds.map(b=>b.right)),bottom=Math.max(...bounds.map(b=>b.bottom));
-    clearArea=[(left-rect.left)/rect.width,(top-rect.top)/rect.height,(right-left)/rect.width,(bottom-top)/rect.height];
     fluid.resize(width/height);
     draw();
   }
@@ -128,7 +119,6 @@ export function createAsciiField(canvas) {
     gl.useProgram(fieldProgram);gl.bindFramebuffer(gl.FRAMEBUFFER,framebuffer);gl.viewport(0,0,columns,rows);
     gl.uniform2f(fieldUniforms.grid,columns,rows);gl.uniform2f(fieldUniforms.resolution,width,height);
     gl.uniform2f(fieldUniforms.cell,cellX,cellY);gl.uniform1f(fieldUniforms.clock,elapsed);gl.uniform1f(fieldUniforms.scale,innerWidth<760?1.6:1);
-    gl.uniform4fv(fieldUniforms.clearArea,clearArea);
     gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,fluid.texture);gl.uniform1i(fieldUniforms.fluid,0);
     gl.drawArrays(gl.TRIANGLES,0,3);
     gl.useProgram(glyphProgram);gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,width,height);
@@ -154,6 +144,6 @@ export function createAsciiField(canvas) {
   }
   const leave=()=>fluid.leave();
   window.addEventListener('pointermove',move,{passive:true});window.addEventListener('pointerdown',move,{passive:true});document.documentElement.addEventListener('pointerleave',leave);window.addEventListener('pointercancel',leave);
-  const observer=new ResizeObserver(resize);observer.observe(canvas);observer.observe(document.querySelector('.hero-content'));resize();frame=requestAnimationFrame(tick);
+  const observer=new ResizeObserver(resize);observer.observe(canvas);resize();frame=requestAnimationFrame(tick);
   return {pause(){paused=true;},play(){paused=false;last=0;},destroy(){cancelAnimationFrame(frame);observer.disconnect();window.removeEventListener('pointermove',move);window.removeEventListener('pointerdown',move);document.documentElement.removeEventListener('pointerleave',leave);window.removeEventListener('pointercancel',leave);fluid.destroy();gl.deleteTexture(tones);gl.deleteTexture(atlas);gl.deleteFramebuffer(framebuffer);gl.deleteVertexArray(vao);gl.deleteProgram(fieldProgram);gl.deleteProgram(glyphProgram);}};
 }
