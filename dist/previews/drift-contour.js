@@ -1,4 +1,4 @@
-import { createAsciiField } from '../ascii-background.js';
+import { createAsciiField } from '../ascii-background.js?v=hero-contrast';
 
 const status = document.querySelector('#preview-status');
 const pauseButton = document.querySelector('#preview-pause');

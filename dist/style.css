@@ -2406,7 +2406,7 @@ body { isolation: isolate; background: #000; }
   position: absolute;
   inset: 0 -80px;
   z-index: 0;
-  background: radial-gradient(ellipse at center, #000 0%, #000f 35%, #000c 50%, transparent 73%);
+  background: radial-gradient(ellipse at center, #000e 0%, #000d 24%, #0008 44%, #0003 62%, transparent 80%);
   pointer-events: none;
 }
 .hero-content > * { position: relative; z-index: 1; }
@@ -2442,7 +2442,7 @@ body { isolation: isolate; background: #000; }
 .countdown-face { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; padding: 14px 24px 12px; background: #f7f7f2; color: #121816; position: relative; }
 .countdown-unit { position: relative; min-width: 0; }
 .countdown-unit + .countdown-unit::before { content: ""; position: absolute; left: -11px; top: 34%; width: 3px; height: 3px; background: #008f80; box-shadow: 0 11px 0 #008f80; }
-.countdown-unit canvas { display: block; width: 100%; aspect-ratio: 14 / 8; }
+.countdown-unit canvas { display: block; width: 100%; aspect-ratio: 14 / 9; }
 .countdown-unit > span { display: block; font: 8px/1.5 var(--mono); letter-spacing: 1.6px; margin-top: 6px; }
 .countdown-accessible { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .countdown-caption { margin-top: 9px; color: #9caaa2; font: 8px/1.6 var(--mono); letter-spacing: 1px; }

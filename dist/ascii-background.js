@@ -33,6 +33,8 @@ export function createAsciiField(canvas) {
     float wake=clamp(signal*.9/.38,0.,1.);
     wake=wake*wake*(3.-2.*wake);
     tone+=(1.-tone)*wake*.92;
+    float middle=exp(-pow((uv.x-.5)/.27,2.));
+    tone*=mix(1.,.60,middle);
     float keep=smoothstep(0.,.16,uv.y)*smoothstep(0.,.16,1.-uv.y);
     tone*=keep;
     wake*=keep;
@@ -47,7 +49,7 @@ export function createAsciiField(canvas) {
       glyph=15.+floor(hash(index+floor(clock*10.)*vec2(.71,.37))*11.);
     }
     float strength=tier<4.?.32+tier*.07:.58+.32*tone;
-    color=vec4(mix(strength,1.,wake),0.,0.,glyph/255.);
+    color=vec4(mix(strength,1.,wake)*mix(1.,.72,middle),0.,0.,glyph/255.);
   }`;
   const glyphs = `#version 300 es
   precision highp float;

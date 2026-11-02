@@ -1,4 +1,4 @@
-import { createAsciiField } from "./ascii-background.js";
+import { createAsciiField } from "./ascii-background.js?v=hero-contrast";
 import { isWhitePixel } from "./pixel-transition.js";
 import { t } from "./i18n.js";
 import { advanceOrbit, beginOrbitReturn, morphFrame } from "./sculpture-motion.js";

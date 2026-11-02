@@ -1,6 +1,6 @@
-import { initCountdown } from "./countdown.js";
+import { initCountdown } from "./countdown.js?v=solid-digits";
 import { registrationPayload } from "./registration-data.js";
-import { motionOff } from "./visuals.js";
+import { motionOff } from "./visuals.js?v=hero-contrast";
 import { language, t } from "./i18n.js";
 const $ = (selector) => document.querySelector(selector);
 history.scrollRestoration = "manual";

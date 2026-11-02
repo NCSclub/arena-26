@@ -42,7 +42,7 @@ export function initCountdown(element) {
       ctx.clearRect(0, 0, width, height);
       const age = paused() ? 1000 : now - model.changed;
       const columns = model.value.length * 6 - 1;
-      const cell = Math.min(width / (columns + 3), height / 8);
+      const cell = Math.min(width / (columns + 1.5), height / 7.5);
       const left = (width - columns * cell) / 2;
       const top = (height - cell * 7) / 2;
       ctx.font = `600 ${cell * 1.15}px "IBM Plex Mono", monospace`;
@@ -58,8 +58,13 @@ export function initCountdown(element) {
           if (!lit) continue;
           const marks = changing ? '+*#@' : '+#*';
           const index = changing ? Math.floor(age / 45) + row + column : row + column;
+          const x = left + (position * 6 + column) * cell, y = top + row * cell;
           ctx.fillStyle = changing ? '#008d7b' : '#101715';
-          ctx.fillText(marks[Math.abs(index) % marks.length], left + (position * 6 + column + .5) * cell, top + (row + .5) * cell);
+          ctx.fillRect(x + cell * .025, y + cell * .025, cell * .95, cell * .95);
+          ctx.globalAlpha = changing ? .8 : .18;
+          ctx.fillStyle = '#f7f7f2';
+          ctx.fillText(marks[Math.abs(index) % marks.length], x + cell * .5, y + cell * .5);
+          ctx.globalAlpha = 1;
         }
       });
       if (age < 420) active = true;
