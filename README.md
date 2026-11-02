@@ -31,7 +31,7 @@ Ouvrir http://127.0.0.1:4173. Vérifications : `npm test`.
 
 ## À configurer avant ouverture des inscriptions
 
-La date, le lieu, les horaires définitifs et les modalités du transport doivent être confirmés par l’organisation. Le compte à rebours du hero attend la date officielle : renseigner un horodatage ISO avec fuseau dans `data-event-start` de `dist/index.html`. Sans date, il affiche des tirets et un état explicite, sans échéance inventée.
+La date, le lieu, les horaires définitifs et les modalités du transport doivent être confirmés par l’organisation. Le compte à rebours du hero utilise provisoirement l’échéance `2027-01-09T18:20:58+01:00` en heure algérienne (`Africa/Algiers`), fixée à 68 jours au moment de sa configuration à la demande de Fadi. Cette échéance est absolue et ne se réinitialise pas à chaque visite. Pour la date officielle, modifier `data-event-start` dans `dist/index.html` et retirer `data-event-provisional="true"`. Sans date valide, le compteur affiche des tirets et un état explicite.
 
 Le formulaire est un aperçu fonctionnel : il valide les réponses et permet un export local. Aucun endpoint d’inscription n’est configuré et aucune donnée n’est transmise ou enregistrée durablement. Brancher le service de réception, la validation côté serveur et la gestion des erreurs avant d’activer de véritables inscriptions.
 

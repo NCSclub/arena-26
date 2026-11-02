@@ -8,6 +8,7 @@ export const translations = {
     "countdownRunning": "COUNTDOWN ACTIVE",
     "countdownLive": "THE ARENA IS OPEN",
     "countdownDateSoon": "START TIME TO BE ANNOUNCED",
+    "countdownProvisional": "PROVISIONAL START",
 
     "skip": "Skip to content",
     "homeLabel": "ARENA 26, home",
@@ -189,6 +190,7 @@ export const translations = {
     "countdownRunning": "COMPTE À REBOURS",
     "countdownLive": "L’ARÈNE EST OUVERTE",
     "countdownDateSoon": "HORAIRE À CONFIRMER",
+    "countdownProvisional": "DATE PROVISOIRE",
 
     "skip": "Aller au contenu",
     "homeLabel": "ARENA 26, accueil",
