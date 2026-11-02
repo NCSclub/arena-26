@@ -6,39 +6,20 @@ import { isWhitePixel } from './dist/pixel-transition.js';
 import { resolveLanguage } from './dist/i18n.js';
 import { translations } from './dist/translations.js';
 import { readFile } from 'node:fs/promises';
-import { arenaDensity, foregroundFade } from './dist/background-patterns.js';
-import { addSignalPoint, signalField } from './dist/signal-field.js';
+import { backgroundModes, backgroundSignal, resolveBackground } from './dist/background-patterns.js';
 
-test('Digital pulses stay tight while overlapping clicks and drag traces decay', () => {
-  const waves = [{x: 0, y: 0, time: 10}, {x: 100, y: 100, time: 10.2}];
-  const click = signalField(132, 0, 10.4, waves, []);
-  assert.ok(Math.abs(click.x) > 1 && click.energy > 0);
-  assert.ok(Math.abs(click.x) <= 3 && Math.abs(click.y) <= 3);
-  let trail = addSignalPoint([], 110, 0, 10);
-  trail = addSignalPoint(trail, 120, 0, 10.05);
-  assert.equal(trail.length, 2);
-  assert.ok(signalField(125, 8, 10.1, [], trail).energy > 0);
-  assert.deepEqual(signalField(125, 8, 13, waves, trail), {x: 0, y: 0, energy: 0});
-  for (let i = 0; i < 100; i++) trail = addSignalPoint(trail, i, 0, 10 + i * .01);
-  assert.equal(trail.length, 32);
-  const crowded = signalField(110, 8, 11, waves, trail);
-  assert.ok(Math.abs(crowded.x) <= 3 && Math.abs(crowded.y) <= 3 && crowded.energy <= 1);
-});
-
-test('ASCII formations move throughout the centre while foreground content stays readable', () => {
-  let changes = 0;
-  for (let y = 0; y <= 1; y += .02) for (let x = 0; x <= 1; x += .02) {
-    const a = arenaDensity(x, y, 0), b = arenaDensity(x, y, 8);
-    assert.ok(a >= 0 && a <= 1 && b >= 0 && b <= 1);
-    if (Math.abs(a - b) > .025) changes++;
+test('Every background evolves without pointer input and remains bounded', () => {
+  assert.equal(resolveBackground('invalid'), 'circuit');
+  for (const mode of backgroundModes) {
+    let changes = 0;
+    for (let y = 0; y < 720; y += 12) for (let x = 0; x < 1280; x += 9) {
+      const a = backgroundSignal(mode, x, y, 1280, 720, 0);
+      const b = backgroundSignal(mode, x, y, 1280, 720, 3);
+      assert.ok(a >= 0 && a <= 1 && b >= 0 && b <= 1, mode);
+      if (Math.abs(a - b) > 0.05) changes++;
+    }
+    assert.ok(changes > 100, `${mode} needs visible idle motion`);
   }
-  assert.ok(changes > 100);
-  const centre = Array.from({length: 80}, (_, time) => arenaDensity(.5, .45, time * .25));
-  assert.ok(Math.max(...centre) > .6);
-  assert.ok(Math.max(...centre) - Math.min(...centre) > .4);
-  const masks = [{left: 100, top: 100, right: 200, bottom: 200}];
-  assert.equal(foregroundFade(150, 150, masks), .12);
-  assert.equal(foregroundFade(150, 40, masks), 1);
 });
 
 test('New visitors use English; only an explicit French preference selects French', () => {

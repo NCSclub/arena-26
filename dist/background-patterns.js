@@ -1,67 +1,37 @@
-import { signalField } from './signal-field.js';
+export const backgroundModes = ['circuit', 'rain', 'wireframe', 'flow'];
 
-export function arenaDensity(nx, ny, time) {
-  const t = time * 0.34;
-  const u = nx + Math.sin(ny * 6.2 + t * .8) * .17;
-  const v = ny + Math.cos(nx * 5.6 - t * .7) * .14;
-  const contour = Math.sin(u * 8.2 - v * 3.8 + t) +
-    Math.sin(v * 8.5 + u * 3.1 - t * .65) * .48;
-  const fold = Math.exp(-Math.pow(contour / .34, 2));
-  const second = Math.exp(-Math.pow((contour - .68) / .21, 2));
-  const lobeX = nx - (.5 + Math.sin(t * .75) * .3);
-  const lobeY = ny - (.48 + Math.cos(t * .6) * .27);
-  const lobe = Math.exp(-(lobeX * lobeX / .065 + lobeY * lobeY / .025));
-  return Math.min(1, fold * .77 + second * .36 + lobe * .33);
+export function resolveBackground(value) {
+  return backgroundModes.includes(value) ? value : 'circuit';
 }
 
-export function foregroundFade(x, y, masks) {
-  let fade = 1;
-  for (const rect of masks) {
-    const dx = Math.max(rect.left - x, 0, x - rect.right);
-    const dy = Math.max(rect.top - y, 0, y - rect.bottom);
-    const distance = Math.hypot(dx, dy);
-    if (distance < 28) fade = Math.min(fade, .12 + .88 * distance / 28);
+export function backgroundSignal(mode, x, y, width, height, time) {
+  const nx = x / width, ny = y / height;
+  if (mode === 'rain') {
+    const column = Math.floor(x / 9);
+    const speed = 0.035 + (Math.sin(column * 12.9898) + 1) * 0.035;
+    const head = (time * speed + Math.sin(column * 7.13) * 0.5 + 1) % 1;
+    const trail = (head - ny + 1) % 1;
+    return trail < 0.28 ? Math.pow(1 - trail / 0.28, 2) : 0.025;
   }
-  return fade;
-}
-
-export function renderArenaBackground(ctx, width, height, time, pointer) {
-  const cell = width < 600 ? 7 : 8, line = width < 600 ? 10 : 11;
-  const word = 'ARENACHALLENGE';
-  ctx.font = '9px "IBM Plex Mono", monospace';
-  ctx.fillStyle = '#b8bfbd';
-  for (let y = 4, row = 0; y < height; y += line, row++) {
-    for (let x = 2, col = 0; x < width; x += cell, col++) {
-      const nx = x / width, ny = y / height;
-      const signal = signalField(x, y, pointer.time, pointer.ripples, pointer.trail);
-      const density = arenaDensity(nx, ny, time);
-      const hash = Math.sin(col * 127.1 + row * 311.7) * 43758.5453;
-      const grain = hash - Math.floor(hash);
-      const distance = Math.hypot(x - pointer.x, y - pointer.y);
-      const wake = pointer.active ? Math.max(0, 1 - distance / 140) : 0;
-      const value = Math.min(1, density * (1 + wake * 0.28) + signal.energy * 0.88);
-      const dust = grain > 0.93 && value < 0.05;
-      if (value < 0.04 && !dust && signal.energy < 0.08) continue;
-      let glyph = '.';
-      if (value > 0.62) glyph = word[(col + row * 3 + Math.floor(time * 1.6)) % word.length];
-      else if (value > 0.4) glyph = '+';
-      else if (value > 0.22) glyph = ':';
-      const fade = foregroundFade(x, y, pointer.masks || []);
-      ctx.fillStyle = signal.energy > 0.3 ? '#70c7bc' : '#bcc3c0';
-      ctx.globalAlpha = (dust ? .1 : .045 + Math.pow(value, 1.25) * .48) * fade;
-      ctx.fillText(glyph, x + signal.x, y + signal.y);
-    }
+  if (mode === 'wireframe') {
+    const depth = 0.25 + ny * 0.9;
+    const perspective = (nx - 0.5) / depth;
+    const wave = Math.sin(perspective * 5 + time * 0.18) * 0.055;
+    const horizon = Math.abs(Math.sin((1 / depth + wave) * 28 - time * 0.28));
+    const longitude = Math.abs(Math.sin(perspective * 24));
+    return Math.max(Math.pow(1 - horizon, 9), Math.pow(1 - longitude, 15)) * 0.85;
   }
-  ctx.lineWidth = 0.6;
-  ctx.strokeStyle = '#a8b0ac';
-  ctx.globalAlpha = 0.12;
-  const left = width * 0.06, right = width * 0.835;
-  const top = width < 700 ? 70 : 84, lower = height * 0.64;
-  ctx.beginPath();
-  for (const x of [left, right]) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
-  for (const y of [top, lower]) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
-  ctx.stroke();
-  ctx.globalAlpha = 0.42;
-  for (const x of [left, right]) for (const y of [top, lower]) ctx.fillRect(x - 1, y - 1, 2, 2);
-  ctx.globalAlpha = 1;
+  if (mode === 'circuit') {
+    const cellX = Math.floor(x / 81), cellY = Math.floor(y / 96);
+    const row = Math.floor(y / 12), column = Math.floor(x / 9);
+    const trace = (column % 9 === 0 && (cellY + cellX) % 3 !== 0) ||
+      (row % 8 === 0 && (cellX + cellY) % 3 !== 1);
+    if (!trace) return 0.025;
+    const pulse = Math.pow(Math.max(0, Math.cos(x * 0.012 + y * 0.009 - time * 0.65)), 14);
+    return 0.18 + pulse * 0.82;
+  }
+  const wx = nx + 0.06 * Math.sin(ny * 5 + time * 0.7);
+  const wy = ny + 0.04 * Math.cos(nx * 6 - time * 0.6);
+  const flow = Math.sin(wx * 14 + wy * 6 + time) * Math.cos(wy * 10 - wx * 4 - time * 0.7);
+  return Math.pow(Math.max(0, 1 - Math.abs(flow - 0.2) * 2.2), 2);
 }

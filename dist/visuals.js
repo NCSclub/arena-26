@@ -1,12 +1,20 @@
 import { addRipple } from "./ripples.js";
 import { isWhitePixel } from "./pixel-transition.js";
 import { t } from "./i18n.js";
-import { renderArenaBackground } from "./background-patterns.js";
-import { addSignalPoint } from "./signal-field.js";
+import { backgroundSignal, resolveBackground } from "./background-patterns.js";
 const $ = (selector) => document.querySelector(selector);
 export let motionOff = sessionStorage.getItem("arena-motion") === "off";
 let logoPaused = false;
 const engines = [];
+let backgroundMode = 'circuit';
+try { backgroundMode = resolveBackground(localStorage.getItem('arena-background')); } catch {}
+const backgroundPicker = document.querySelector('#background-mode');
+backgroundPicker.value = backgroundMode;
+backgroundPicker.addEventListener('change', () => {
+  backgroundMode = resolveBackground(backgroundPicker.value);
+  try { localStorage.setItem('arena-background', backgroundMode); } catch {}
+  engines.forEach(refresh => refresh());
+});
 
 for (const selector of [".about", ".footer"]) {
   const canvas = document.createElement("canvas");
@@ -82,29 +90,16 @@ function engine(canvas, render) {
 
 document.querySelectorAll('[data-ascii="background"]').forEach((canvas) => {
   const area = canvas.parentElement;
+  const pointerRange = 120;
   let px = -1000,
     py = -1000;
   let ripples = [];
-  let trail = [], held = null, lastSignal = { x: 0, y: 0, time: 0 };
-  const excluded = 'a, button, input, select, textarea, summary, .ascii-sculpture';
-  const release = () => { held = null; canvas.dataset.dragging = 'false'; };
-  window.addEventListener('pointerup', release);
-  window.addEventListener('pointercancel', release);
-  window.addEventListener('blur', release);
-  area.addEventListener('lostpointercapture', release);
   area.addEventListener(
     "pointermove",
     (event) => {
       const r = canvas.getBoundingClientRect();
       px = event.clientX - r.left;
       py = event.clientY - r.top;
-      if (held === event.pointerId && !motionOff) {
-        const time = performance.now() / 1000;
-        if (Math.hypot(px - lastSignal.x, py - lastSignal.y) >= 9 && time - lastSignal.time >= 0.022) {
-          trail = addSignalPoint(trail, px, py, time);
-          lastSignal = { x: px, y: py, time };
-        }
-      }
     },
     { passive: true },
   );
@@ -114,7 +109,12 @@ document.querySelectorAll('[data-ascii="background"]').forEach((canvas) => {
   area.addEventListener(
     "pointerdown",
     (event) => {
-      if (motionOff || event.button !== 0 || event.target.closest(excluded)) return;
+      if (
+        event.target.closest(
+          "a, button, input, select, textarea, summary, .ascii-sculpture",
+        )
+      )
+        return;
       const r = canvas.getBoundingClientRect();
       ripples = addRipple(
         ripples,
@@ -122,21 +122,11 @@ document.querySelectorAll('[data-ascii="background"]').forEach((canvas) => {
         event.clientY - r.top,
         performance.now() / 1000,
       );
-      px = event.clientX - r.left; py = event.clientY - r.top;
-      if (event.pointerType === 'mouse' || event.pointerType === 'pen') {
-        held = event.pointerId;
-        canvas.dataset.dragging = 'true';
-        lastSignal = { x: px, y: py, time: performance.now() / 1000 };
-        trail = addSignalPoint(trail, px, py, lastSignal.time);
-        area.setPointerCapture(event.pointerId);
-        event.preventDefault();
-      }
     },
-    { passive: false },
+    { passive: true },
   );
   engine(canvas, (ctx, w, h, now) => {
     ripples = ripples.filter((ripple) => now - ripple.time < 2);
-    trail = trail.filter(point => now - point.time < 0.9);
     const waves = motionOff
       ? []
       : ripples.map((ripple) => ({
@@ -145,17 +135,82 @@ document.querySelectorAll('[data-ascii="background"]').forEach((canvas) => {
           strength: 1 - (now - ripple.time) / 2,
         }));
     canvas.dataset.ripples = String(waves.length);
-    canvas.dataset.trail = String(motionOff ? 0 : trail.length);
-    canvas.dataset.background = 'arena-original';
-    const bounds = canvas.getBoundingClientRect();
-    const masks = [...area.querySelectorAll('.hero-lockup, #hero-title, .hero-description, .event-date, .hero-actions')]
-      .map(element => element.getBoundingClientRect())
-      .filter(rect => rect.width && rect.height)
-      .map(rect => ({left: rect.left - bounds.left, right: rect.right - bounds.left, top: rect.top - bounds.top, bottom: rect.bottom - bounds.top}));
-    renderArenaBackground(ctx, w, h, motionOff ? 0 : now, {
-      x: px, y: py, active: !motionOff, time: now,
-      ripples: motionOff ? [] : ripples, trail: motionOff ? [] : trail, masks
-    });
+    const t = motionOff ? 0 : now * (backgroundMode === 'flow' ? 0.2 : 1);
+    canvas.dataset.background = backgroundMode;
+    const step = w < 600 ? 8 : 9,
+      line = 12;
+    ctx.font = '9px "IBM Plex Mono", monospace';
+    const ramp = backgroundMode === 'rain' ? " .:010101<>#" : backgroundMode === 'wireframe' ? " .:+xX#" : " .:+01<>[]=#";
+    for (let y = 0; y < h; y += line)
+      for (let x = 0; x < w; x += step) {
+        const nx = x / w,
+          ny = y / h;
+        const ridge = backgroundSignal(backgroundMode, x, y, w, h, t);
+        const centerFade = Math.min(
+          1,
+          Math.pow(Math.abs(nx - 0.5) * 2.7, 1.3) +
+            Math.pow(Math.abs(ny - 0.42) * 1.35, 3),
+        );
+        const distance = Math.hypot(x - px, y - py);
+        const wake = motionOff ? 0 : Math.max(0, 1 - distance / pointerRange);
+        let ring = 0;
+        for (const wave of waves) {
+          const radius = Math.hypot(x - wave.x, y - wave.y);
+          ring +=
+            Math.exp(-Math.pow((radius - wave.radius) / 35, 2)) * wave.strength;
+        }
+        const scan = backgroundMode === 'flow' ?
+          Math.pow(Math.max(0, Math.cos(ny * 13 - t * 1.7)), 16) * 0.22
+          : 0;
+        const lane =
+          Math.floor(x / step) % 13 === 0 || Math.floor(y / line) % 11 === 0
+            ? 0.14
+            : 0;
+        const value = Math.min(
+          1,
+          (ridge + scan + lane) * centerFade + wake * 0.8 + ring,
+        );
+        if (value < 0.09) continue;
+        const signal =
+          Math.sin(x * 0.17 + y * 0.09 + Math.floor(t * 1.5)) > 0.9;
+        ctx.fillStyle = wake > 0.25 || signal ? "#00d7be" : "#cad8d4";
+        ctx.globalAlpha = Math.min(0.8, value * 0.83);
+        const i = Math.min(
+          ramp.length - 1,
+          Math.floor(value * (ramp.length - 1)),
+        );
+        ctx.fillText(ramp[i], x + Math.sin(t + ny * 8) * wake * 9, y);
+      }
+    ctx.globalAlpha = 1;
+    const unit = Math.min(64, w / 12);
+    ctx.lineWidth = 0.7;
+    for (let side = 0; side < 2; side++)
+      for (let track = 0; track < 4; track++) {
+        const origin = side ? w : 0;
+        const direction = side ? -1 : 1;
+        const x = origin + direction * unit * (track + 0.5);
+        const y = h * (0.17 + track * 0.2);
+        ctx.strokeStyle = "#00d7be";
+        ctx.globalAlpha = 0.12;
+        ctx.beginPath();
+        ctx.moveTo(x, y - unit);
+        ctx.lineTo(x, y);
+        ctx.lineTo(x + direction * unit * 0.5, y + unit * 0.5);
+        ctx.lineTo(x + direction * unit * 1.2, y + unit * 0.5);
+        ctx.stroke();
+        const travel = (t * 0.22 + track * 0.23) % 1;
+        ctx.globalAlpha = 0.55;
+        ctx.fillStyle = "#00d7be";
+        ctx.fillRect(x - 1.5, y - unit + travel * unit, 3, 3);
+        ctx.globalAlpha = 0.35;
+        ctx.strokeRect(
+          x + direction * unit * 1.2 - 2,
+          y + unit * 0.5 - 2,
+          4,
+          4,
+        );
+      }
+    ctx.globalAlpha = 1;
   });
 });
 
