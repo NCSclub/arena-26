@@ -16,19 +16,29 @@ export function createMixedField(canvas, blend = .1) {
     vec2 uv=gl_FragCoord.xy/grid;
     vec2 p=(uv-.5)*vec2(resolution.x/resolution.y,1.);
     float t=clock*.045;
-    vec2 q=p*1.15;
+    vec2 delta=(uv-pointer)*vec2(resolution.x/resolution.y,1.);
+    float influence=exp(-dot(delta,delta)/.018);
+    p+=delta*influence*.12;
+    vec2 q=p*3.1;
     vec2 warp=vec2(fbm(q*.7+vec2(t,-t*.7)),fbm(q*.7+vec2(4.3-t*.8,t+1.7)));
-    float drift=smoothstep(.36,.74,fbm(q+warp*1.3+vec2(t*.4,t*.25)));
+    float drift=fbm(q+warp*1.3+vec2(t*.9,t*.6));
     float tt=(clock+40.)*.02;
-    vec2 terrain=p*1.15+vec2(tt,-tt*.6);
+    vec2 terrain=p*2.6+warp*.4+vec2(tt,-tt*.6);
     float h=noise(terrain)*.62+noise(terrain*2.07+3.1)*.27+noise(terrain*4.3-tt+7.)*.11;
     h+=.08*sin(tt*2.+p.x*.8);
     float k=h*13.,w=max(fwidth(k),.0001),d=abs(fract(k+.5)-.5)/w;
     float major=mod(floor(k+.5),5.)<.5?1.:0.;
     float contour=(1.-smoothstep(.35,1.25-major*.25,d))*mix(.55,1.,major);
-    float tone=clamp(mix(clamp(drift+.05,0.,1.),contour,blend)*1.45+.08,0.,1.);
-    vec2 delta=(uv-pointer)*vec2(resolution.x/resolution.y,1.);
-    tone+=exp(-dot(delta,delta)/.014)*.16;
+    vec2 a=(uv-vec2(.18+.035*sin(t),.13+.025*cos(t*.8)))/vec2(.31,.18);
+    vec2 b=(uv-vec2(-.055+.03*cos(t*.7),.76+.055*sin(t*.9)))/vec2(.39,.29);
+    vec2 c=(uv-vec2(1.025+.025*sin(t*.6),.38+.065*cos(t*.7)))/vec2(.29,.32);
+    vec2 bottom=(uv-vec2(.91+.03*cos(t*.8),1.08+.035*sin(t)))/vec2(.34,.25);
+    float edge=min(min(length(a),length(b)),min(length(c),length(bottom)));
+    float organic=edge+(fbm(q*1.8+vec2(t,-t))-.5)*.55;
+    float island=1.-smoothstep(.38,1.,organic);
+    float detail=mix(.38+drift*.85,.38+drift*.42+contour*.35,blend);
+    float tone=clamp(island*detail+influence*island*.12,0.,1.);
+    tone=tone<.13?0.:tone;
     color=vec4(vec3(clamp(tone,0.,1.)),1.);
   }`;
   const glyphs = `#version 300 es
@@ -44,10 +54,7 @@ export function createMixedField(canvas, blend = .1) {
     float glyph=floor(tone*(count-1.)+.5);
     vec2 local=fract(pos/cell);
     float ink=texture(atlas,vec2((glyph+local.x)/count,local.y)).a;
-    vec3 ground=vec3(.035,.043,.043);
-    vec2 focus=(pos/resolution-vec2(.5,.45))*2.;
-    float readability=1.-.4*exp(-dot(focus,focus)*4.);
-    color=vec4(mix(ground,vec3(.69,.73,.71),ink*(.42+.5*tone)*readability),1.);
+    color=vec4(vec3(.64,.68,.66)*ink*(.35+.65*tone),1.);
   }`;
   function program(fragment) {
     const shaders=[gl.VERTEX_SHADER,gl.FRAGMENT_SHADER].map((type,i)=>{
