@@ -127,7 +127,7 @@ export function createFluidWake(gl, compile) {
     if(distance<.001)return;
     const short=Math.min(width,height),seconds=time>old.time?Math.max(1/240,(time-old.time)/1000):1/60;
     const speed=1-Math.exp(-Math.min(12,distance/short/seconds)/2.2);
-    const radius=.0445*short*(.65+.95*speed),samples=Math.min(128,Math.max(1,Math.ceil(distance/(.4*radius))));
+    const radius=.0335*short*(.65+.95*speed),samples=Math.min(128,Math.max(1,Math.ceil(distance/(.4*radius))));
     queue.push({origin:[old.x*(width-1),old.y*(height-1),dx,dy],shape:[radius,distance/radius*(.32+.22*speed)/samples,distance*(2+18*speed)/samples,samples]});
     remaining=6;
   }
