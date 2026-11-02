@@ -1,10 +1,14 @@
+import { waterOffset } from './water.js';
+
 export function arenaDensity(nx, ny, time) {
-  const drift = time * 0.13;
+  const drift = time * 0.28;
   const patches = [
-    [0.29 + Math.sin(drift) * 0.025, 0.085, 0.18, 0.065, -0.12],
+    [0.29 + Math.sin(drift) * 0.045, 0.085 + Math.cos(drift * .7) * .012, 0.18, 0.065, -0.12],
     [-0.045, 0.77 + Math.sin(drift * 0.8) * 0.035, 0.255, 0.18, 0.55],
     [1.035, 0.22 + Math.cos(drift * 0.7) * 0.04, 0.15, 0.27, -0.4],
-    [0.96, 1.035, 0.24, 0.16, -0.5]
+    [0.96, 1.035, 0.24, 0.16, -0.5],
+    [0.08 + Math.sin(drift * .6) * .03, .29, .065, .045, .4],
+    [.9, .64 + Math.cos(drift) * .06, .08, .055, -.3]
   ];
   let density = 0;
   for (const [cx, cy, sx, sy, rotation] of patches) {
@@ -28,25 +32,31 @@ export function renderArenaBackground(ctx, width, height, time, pointer) {
   for (let y = 4, row = 0; y < height; y += line, row++) {
     for (let x = 2, col = 0; x < width; x += cell, col++) {
       const nx = x / width, ny = y / height;
-      const density = arenaDensity(nx, ny, time);
+      const water = waterOffset(x, y, pointer.time, pointer.ripples, pointer.trail);
+      const density = arenaDensity((x - water.x) / width, (y - water.y) / height, time);
       const hash = Math.sin(col * 127.1 + row * 311.7) * 43758.5453;
       const grain = hash - Math.floor(hash);
       const distance = Math.hypot(x - pointer.x, y - pointer.y);
       const wake = pointer.active ? Math.max(0, 1 - distance / 140) : 0;
-      let pulse = 0;
-      for (const wave of pointer.waves) pulse += Math.exp(-Math.pow((Math.hypot(x - wave.x, y - wave.y) - wave.radius) / 40, 2)) * wave.strength * 0.24;
-      const value = Math.min(1, density * (1 + wake * 0.45 + pulse));
+      const value = Math.min(1, density * (1 + wake * 0.35) + water.energy * 0.4);
       const dust = grain > 0.92 && value < 0.05;
       if (value < 0.028 && !dust) continue;
       let glyph = '.';
-      if (value > 0.48) glyph = word[(col + row * 3 + Math.floor(time * 0.45)) % word.length];
+      if (value > 0.48) glyph = word[(col + row * 3 + Math.floor(time * 1.2)) % word.length];
       else if (value > 0.28) glyph = '+';
       else if (value > 0.12) glyph = ':';
       ctx.globalAlpha = dust ? 0.1 : 0.1 + value * 0.62;
-      ctx.fillText(glyph, x + Math.sin(time * 0.6 + ny * 8) * wake * density * 5, y);
+      ctx.fillText(glyph, x + water.x + Math.sin(time * .7 + ny * 8) * density * 4, y + water.y + Math.cos(time * .6 + nx * 5) * density * 2);
     }
   }
   ctx.lineWidth = 0.6;
+  for (let i = 0; i < 12; i++) {
+    const side = i % 2;
+    const x = width * (side ? .89 : .075) + Math.sin(time * .3 + i * 2.4) * width * .045;
+    const y = ((i * .137 + time * (.008 + (i % 3) * .003)) % 1) * height;
+    ctx.globalAlpha = .12 + Math.pow(Math.sin(time * .4 + i), 2) * .16;
+    ctx.fillText(i % 3 === 0 ? '01' : '+', x, y);
+  }
   ctx.strokeStyle = '#a8b0ac';
   ctx.globalAlpha = 0.12;
   const left = width * 0.06, right = width * 0.835;

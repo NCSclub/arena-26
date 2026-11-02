@@ -2,6 +2,7 @@ import { addRipple } from "./ripples.js";
 import { isWhitePixel } from "./pixel-transition.js";
 import { t } from "./i18n.js";
 import { renderArenaBackground } from "./background-patterns.js";
+import { addWake } from "./water.js";
 const $ = (selector) => document.querySelector(selector);
 export let motionOff = sessionStorage.getItem("arena-motion") === "off";
 let logoPaused = false;
@@ -84,12 +85,26 @@ document.querySelectorAll('[data-ascii="background"]').forEach((canvas) => {
   let px = -1000,
     py = -1000;
   let ripples = [];
+  let trail = [], held = null, lastWake = { x: 0, y: 0, time: 0 };
+  const excluded = 'a, button, input, select, textarea, summary, .ascii-sculpture';
+  const release = () => { held = null; canvas.dataset.dragging = 'false'; };
+  window.addEventListener('pointerup', release);
+  window.addEventListener('pointercancel', release);
+  window.addEventListener('blur', release);
+  area.addEventListener('lostpointercapture', release);
   area.addEventListener(
     "pointermove",
     (event) => {
       const r = canvas.getBoundingClientRect();
       px = event.clientX - r.left;
       py = event.clientY - r.top;
+      if (held === event.pointerId && !motionOff) {
+        const time = performance.now() / 1000;
+        if (Math.hypot(px - lastWake.x, py - lastWake.y) >= 10 && time - lastWake.time >= 0.025) {
+          trail = addWake(trail, px, py, time);
+          lastWake = { x: px, y: py, time };
+        }
+      }
     },
     { passive: true },
   );
@@ -99,12 +114,7 @@ document.querySelectorAll('[data-ascii="background"]').forEach((canvas) => {
   area.addEventListener(
     "pointerdown",
     (event) => {
-      if (
-        event.target.closest(
-          "a, button, input, select, textarea, summary, .ascii-sculpture",
-        )
-      )
-        return;
+      if (motionOff || event.button !== 0 || event.target.closest(excluded)) return;
       const r = canvas.getBoundingClientRect();
       ripples = addRipple(
         ripples,
@@ -112,11 +122,21 @@ document.querySelectorAll('[data-ascii="background"]').forEach((canvas) => {
         event.clientY - r.top,
         performance.now() / 1000,
       );
+      px = event.clientX - r.left; py = event.clientY - r.top;
+      if (event.pointerType === 'mouse' || event.pointerType === 'pen') {
+        held = event.pointerId;
+        canvas.dataset.dragging = 'true';
+        lastWake = { x: px, y: py, time: performance.now() / 1000 };
+        trail = addWake(trail, px, py, lastWake.time);
+        area.setPointerCapture(event.pointerId);
+        event.preventDefault();
+      }
     },
-    { passive: true },
+    { passive: false },
   );
   engine(canvas, (ctx, w, h, now) => {
     ripples = ripples.filter((ripple) => now - ripple.time < 2);
+    trail = trail.filter(point => now - point.time < 1.2);
     const waves = motionOff
       ? []
       : ripples.map((ripple) => ({
@@ -125,9 +145,11 @@ document.querySelectorAll('[data-ascii="background"]').forEach((canvas) => {
           strength: 1 - (now - ripple.time) / 2,
         }));
     canvas.dataset.ripples = String(waves.length);
+    canvas.dataset.wake = String(motionOff ? 0 : trail.length);
     canvas.dataset.background = 'arena-original';
     renderArenaBackground(ctx, w, h, motionOff ? 0 : now, {
-      x: px, y: py, active: !motionOff, waves
+      x: px, y: py, active: !motionOff, time: now,
+      ripples: motionOff ? [] : ripples, trail: motionOff ? [] : trail
     });
   });
 });

@@ -7,6 +7,22 @@ import { resolveLanguage } from './dist/i18n.js';
 import { translations } from './dist/translations.js';
 import { readFile } from 'node:fs/promises';
 import { arenaDensity } from './dist/background-patterns.js';
+import { addWake, waterOffset } from './dist/water.js';
+
+test('Water clicks displace glyphs, overlapping clicks persist, and drag wakes decay', () => {
+  const waves = [{x: 0, y: 0, time: 10}, {x: 100, y: 100, time: 10.2}];
+  const click = waterOffset(110, 0, 10.4, waves, []);
+  assert.ok(Math.abs(click.x) > 1 && click.energy > 0);
+  let trail = addWake([], 110, 0, 10);
+  trail = addWake(trail, 120, 0, 10.05);
+  assert.equal(trail.length, 2);
+  assert.ok(waterOffset(125, 8, 10.1, [], trail).energy > 0);
+  assert.deepEqual(waterOffset(125, 8, 13, waves, trail), {x: 0, y: 0, energy: 0});
+  for (let i = 0; i < 100; i++) trail = addWake(trail, i, 0, 10 + i * .01);
+  assert.equal(trail.length, 24);
+  const crowded = waterOffset(110, 8, 11, waves, trail);
+  assert.ok(Math.abs(crowded.x) <= 32 && Math.abs(crowded.y) <= 32 && crowded.energy <= 1);
+});
 
 test('Reference background moves autonomously and protects the centre', () => {
   let changes = 0;
