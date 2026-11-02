@@ -1,5 +1,9 @@
 # ARENA 26
 
+## Aperçu Drift × Contour
+
+Ouvrir `/previews/drift-contour.html` sur le serveur local pour comparer un mélange des véritables presets Drift et Contour d’Asciify au-dessus du hero ARENA. Les trois fichiers de cet aperçu sont dans `dist/previews/`. Le curseur règle leur opacité relative et le bouton de pause arrête les deux couches. Le module `asciify-engine@4.32.8/kit` est chargé depuis esm.sh pour cette prévisualisation ; une connexion est nécessaire. Cet aperçu indépendant ne remplace pas le fond de la page d’accueil. Les presets et l’API sont documentés sur [Asciify](https://asciify.org/docs/backgrounds).
+
 La prévisualisation locale utilise le fond original de `Moufdi-branch` (commit `b0ddeeb`), sans les variantes ni les expériences d’animation ajoutées ensuite. Le correctif de centrage du symbole du programme est conservé. Les références au bouton de pause de sculpture absent sont facultatives pour permettre l’initialisation des contrôles.
 
 Projet indépendant du site d’inscription de l’édition précédente. HTML, CSS et JavaScript natifs ; aucune installation de dépendances nécessaire.
