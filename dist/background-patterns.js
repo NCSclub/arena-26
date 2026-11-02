@@ -1,4 +1,4 @@
-import { waterOffset } from './water.js';
+import { signalField } from './signal-field.js';
 
 export function arenaDensity(nx, ny, time) {
   const drift = time * 0.28;
@@ -20,8 +20,8 @@ export function arenaDensity(nx, ny, time) {
     const fold = 0.76 + Math.sin(u * 4 + contour * 3 - drift * 1.5) * 0.24;
     density = Math.max(density, envelope * fold);
   }
-  const quiet = Math.exp(-Math.pow((nx - 0.5) / 0.26, 6)) * Math.exp(-Math.pow((ny - 0.45) / 0.27, 6));
-  return density * (1 - quiet * 0.97);
+  const quiet = Math.exp(-Math.pow((nx - 0.5) / 0.3, 6)) * Math.exp(-Math.pow((ny - 0.45) / 0.32, 6));
+  return density * (1 - quiet * 0.72);
 }
 
 export function renderArenaBackground(ctx, width, height, time, pointer) {
@@ -32,24 +32,39 @@ export function renderArenaBackground(ctx, width, height, time, pointer) {
   for (let y = 4, row = 0; y < height; y += line, row++) {
     for (let x = 2, col = 0; x < width; x += cell, col++) {
       const nx = x / width, ny = y / height;
-      const water = waterOffset(x, y, pointer.time, pointer.ripples, pointer.trail);
-      const density = arenaDensity((x - water.x) / width, (y - water.y) / height, time);
+      const signal = signalField(x, y, pointer.time, pointer.ripples, pointer.trail);
+      const density = arenaDensity(nx, ny, time);
       const hash = Math.sin(col * 127.1 + row * 311.7) * 43758.5453;
       const grain = hash - Math.floor(hash);
       const distance = Math.hypot(x - pointer.x, y - pointer.y);
       const wake = pointer.active ? Math.max(0, 1 - distance / 140) : 0;
-      const value = Math.min(1, density * (1 + wake * 0.35) + water.energy * 0.4);
+      const value = Math.min(1, density * (1 + wake * 0.28) + signal.energy * 0.88);
       const dust = grain > 0.92 && value < 0.05;
-      if (value < 0.028 && !dust) continue;
+      if (value < 0.028 && !dust && signal.energy < 0.08) continue;
       let glyph = '.';
       if (value > 0.48) glyph = word[(col + row * 3 + Math.floor(time * 1.2)) % word.length];
       else if (value > 0.28) glyph = '+';
       else if (value > 0.12) glyph = ':';
+      ctx.fillStyle = signal.energy > 0.24 ? '#00d7be' : '#b8bfbd';
       ctx.globalAlpha = dust ? 0.1 : 0.1 + value * 0.62;
-      ctx.fillText(glyph, x + water.x + Math.sin(time * .7 + ny * 8) * density * 4, y + water.y + Math.cos(time * .6 + nx * 5) * density * 2);
+      ctx.fillText(glyph, x + signal.x + Math.sin(time * .7 + ny * 8) * density * 2, y + signal.y + Math.cos(time * .6 + nx * 5) * density);
     }
   }
   ctx.lineWidth = 0.6;
+  const lanes = [0.14, 0.23, 0.32, 0.43, 0.55, 0.66, 0.77, 0.88];
+  for (let lane = 0; lane < lanes.length; lane++) {
+    const y = height * lanes[lane] + Math.sin(time * .32 + lane) * 10;
+    const direction = lane % 2 ? -1 : 1;
+    const travel = ((time * (.035 + lane * .002) * direction + lane * .173) % 1 + 1) % 1;
+    const x = travel * width;
+    ctx.globalAlpha = lane % 3 === 0 ? 0.15 : 0.11;
+    ctx.fillStyle = lane % 3 === 0 ? '#00d7be' : '#b8bfbd';
+    for (const wrap of [-width, 0, width]) {
+      ctx.fillText(lane % 2 ? '[01] <ARENA_PACKET> >>>' : '...+01> ARENA_SIGNAL ...', x - 90 + wrap, y);
+    }
+    ctx.globalAlpha = 0.055;
+    ctx.fillRect(0, y + 3, width, 0.5);
+  }
   for (let i = 0; i < 12; i++) {
     const side = i % 2;
     const x = width * (side ? .89 : .075) + Math.sin(time * .3 + i * 2.4) * width * .045;

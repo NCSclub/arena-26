@@ -7,21 +7,22 @@ import { resolveLanguage } from './dist/i18n.js';
 import { translations } from './dist/translations.js';
 import { readFile } from 'node:fs/promises';
 import { arenaDensity } from './dist/background-patterns.js';
-import { addWake, waterOffset } from './dist/water.js';
+import { addSignalPoint, signalField } from './dist/signal-field.js';
 
-test('Water clicks displace glyphs, overlapping clicks persist, and drag wakes decay', () => {
+test('Digital pulses stay tight while overlapping clicks and drag traces decay', () => {
   const waves = [{x: 0, y: 0, time: 10}, {x: 100, y: 100, time: 10.2}];
-  const click = waterOffset(110, 0, 10.4, waves, []);
+  const click = signalField(132, 0, 10.4, waves, []);
   assert.ok(Math.abs(click.x) > 1 && click.energy > 0);
-  let trail = addWake([], 110, 0, 10);
-  trail = addWake(trail, 120, 0, 10.05);
+  assert.ok(Math.abs(click.x) <= 3 && Math.abs(click.y) <= 3);
+  let trail = addSignalPoint([], 110, 0, 10);
+  trail = addSignalPoint(trail, 120, 0, 10.05);
   assert.equal(trail.length, 2);
-  assert.ok(waterOffset(125, 8, 10.1, [], trail).energy > 0);
-  assert.deepEqual(waterOffset(125, 8, 13, waves, trail), {x: 0, y: 0, energy: 0});
-  for (let i = 0; i < 100; i++) trail = addWake(trail, i, 0, 10 + i * .01);
-  assert.equal(trail.length, 24);
-  const crowded = waterOffset(110, 8, 11, waves, trail);
-  assert.ok(Math.abs(crowded.x) <= 32 && Math.abs(crowded.y) <= 32 && crowded.energy <= 1);
+  assert.ok(signalField(125, 8, 10.1, [], trail).energy > 0);
+  assert.deepEqual(signalField(125, 8, 13, waves, trail), {x: 0, y: 0, energy: 0});
+  for (let i = 0; i < 100; i++) trail = addSignalPoint(trail, i, 0, 10 + i * .01);
+  assert.equal(trail.length, 32);
+  const crowded = signalField(110, 8, 11, waves, trail);
+  assert.ok(Math.abs(crowded.x) <= 3 && Math.abs(crowded.y) <= 3 && crowded.energy <= 1);
 });
 
 test('Reference background moves autonomously and protects the centre', () => {
@@ -33,7 +34,7 @@ test('Reference background moves autonomously and protects the centre', () => {
   }
   assert.ok(changes > 100);
   for (const time of [0, 8, 30, 100]) {
-    assert.ok(arenaDensity(.5, .45, time) < .01);
+    assert.ok(arenaDensity(.5, .45, time) < .08);
     assert.ok(arenaDensity(.04, .8, time) > .1);
   }
 });

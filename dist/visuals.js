@@ -2,7 +2,7 @@ import { addRipple } from "./ripples.js";
 import { isWhitePixel } from "./pixel-transition.js";
 import { t } from "./i18n.js";
 import { renderArenaBackground } from "./background-patterns.js";
-import { addWake } from "./water.js";
+import { addSignalPoint } from "./signal-field.js";
 const $ = (selector) => document.querySelector(selector);
 export let motionOff = sessionStorage.getItem("arena-motion") === "off";
 let logoPaused = false;
@@ -85,7 +85,7 @@ document.querySelectorAll('[data-ascii="background"]').forEach((canvas) => {
   let px = -1000,
     py = -1000;
   let ripples = [];
-  let trail = [], held = null, lastWake = { x: 0, y: 0, time: 0 };
+  let trail = [], held = null, lastSignal = { x: 0, y: 0, time: 0 };
   const excluded = 'a, button, input, select, textarea, summary, .ascii-sculpture';
   const release = () => { held = null; canvas.dataset.dragging = 'false'; };
   window.addEventListener('pointerup', release);
@@ -100,9 +100,9 @@ document.querySelectorAll('[data-ascii="background"]').forEach((canvas) => {
       py = event.clientY - r.top;
       if (held === event.pointerId && !motionOff) {
         const time = performance.now() / 1000;
-        if (Math.hypot(px - lastWake.x, py - lastWake.y) >= 10 && time - lastWake.time >= 0.025) {
-          trail = addWake(trail, px, py, time);
-          lastWake = { x: px, y: py, time };
+        if (Math.hypot(px - lastSignal.x, py - lastSignal.y) >= 9 && time - lastSignal.time >= 0.022) {
+          trail = addSignalPoint(trail, px, py, time);
+          lastSignal = { x: px, y: py, time };
         }
       }
     },
@@ -126,8 +126,8 @@ document.querySelectorAll('[data-ascii="background"]').forEach((canvas) => {
       if (event.pointerType === 'mouse' || event.pointerType === 'pen') {
         held = event.pointerId;
         canvas.dataset.dragging = 'true';
-        lastWake = { x: px, y: py, time: performance.now() / 1000 };
-        trail = addWake(trail, px, py, lastWake.time);
+        lastSignal = { x: px, y: py, time: performance.now() / 1000 };
+        trail = addSignalPoint(trail, px, py, lastSignal.time);
         area.setPointerCapture(event.pointerId);
         event.preventDefault();
       }
@@ -136,7 +136,7 @@ document.querySelectorAll('[data-ascii="background"]').forEach((canvas) => {
   );
   engine(canvas, (ctx, w, h, now) => {
     ripples = ripples.filter((ripple) => now - ripple.time < 2);
-    trail = trail.filter(point => now - point.time < 1.2);
+    trail = trail.filter(point => now - point.time < 0.9);
     const waves = motionOff
       ? []
       : ripples.map((ripple) => ({
@@ -145,7 +145,7 @@ document.querySelectorAll('[data-ascii="background"]').forEach((canvas) => {
           strength: 1 - (now - ripple.time) / 2,
         }));
     canvas.dataset.ripples = String(waves.length);
-    canvas.dataset.wake = String(motionOff ? 0 : trail.length);
+    canvas.dataset.trail = String(motionOff ? 0 : trail.length);
     canvas.dataset.background = 'arena-original';
     renderArenaBackground(ctx, w, h, motionOff ? 0 : now, {
       x: px, y: py, active: !motionOff, time: now,
