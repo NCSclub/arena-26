@@ -4,7 +4,7 @@ body{isolation:isolate}
 .logo-filter{position:absolute;width:0;height:0;overflow:hidden}
 .hero-lockup,.brand img{filter:url(#transparent-logo);mix-blend-mode:normal}
 .header{background:linear-gradient(#000e,#0009)}
-.hero{min-height:100svh}
+.hero{min-height:100svh;user-select:none;-webkit-user-select:none}
 .hero-content{padding-top:70px;padding-bottom:150px}
 .hero-description{font-size:15px;color:#b7bfbb;text-shadow:none}
 .hero-bottom{bottom:70px}

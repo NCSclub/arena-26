@@ -1,11 +1,11 @@
-import { createMixedField } from './mixed-field.js';
+import { createAsciiField } from './mixed-field.js';
 
 const status = document.querySelector('#preview-status');
 const pauseButton = document.querySelector('#preview-pause');
 
 try {
   await document.fonts.ready;
-  const field = createMixedField(document.querySelector('#mixed-field'), .1);
+  const field = createAsciiField(document.querySelector('#mixed-field'));
   let paused = false;
   pauseButton.addEventListener('click', () => {
     paused = !paused;
