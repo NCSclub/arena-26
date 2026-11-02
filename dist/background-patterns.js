@@ -1,37 +1,61 @@
-export const backgroundModes = ['circuit', 'rain', 'wireframe', 'flow'];
-
-export function resolveBackground(value) {
-  return backgroundModes.includes(value) ? value : 'circuit';
+export function arenaDensity(nx, ny, time) {
+  const drift = time * 0.13;
+  const patches = [
+    [0.29 + Math.sin(drift) * 0.025, 0.085, 0.18, 0.065, -0.12],
+    [-0.045, 0.77 + Math.sin(drift * 0.8) * 0.035, 0.255, 0.18, 0.55],
+    [1.035, 0.22 + Math.cos(drift * 0.7) * 0.04, 0.15, 0.27, -0.4],
+    [0.96, 1.035, 0.24, 0.16, -0.5]
+  ];
+  let density = 0;
+  for (const [cx, cy, sx, sy, rotation] of patches) {
+    const x = nx - cx, y = ny - cy;
+    const u = (x * Math.cos(rotation) - y * Math.sin(rotation)) / sx;
+    const v = (x * Math.sin(rotation) + y * Math.cos(rotation)) / sy;
+    const contour = v + Math.sin(u * 2.7 + drift) * 0.16;
+    const envelope = Math.exp(-(u * u * 1.3 + contour * contour * 2.5));
+    const fold = 0.76 + Math.sin(u * 4 + contour * 3 - drift * 1.5) * 0.24;
+    density = Math.max(density, envelope * fold);
+  }
+  const quiet = Math.exp(-Math.pow((nx - 0.5) / 0.26, 6)) * Math.exp(-Math.pow((ny - 0.45) / 0.27, 6));
+  return density * (1 - quiet * 0.97);
 }
 
-export function backgroundSignal(mode, x, y, width, height, time) {
-  const nx = x / width, ny = y / height;
-  if (mode === 'rain') {
-    const column = Math.floor(x / 9);
-    const speed = 0.035 + (Math.sin(column * 12.9898) + 1) * 0.035;
-    const head = (time * speed + Math.sin(column * 7.13) * 0.5 + 1) % 1;
-    const trail = (head - ny + 1) % 1;
-    return trail < 0.28 ? Math.pow(1 - trail / 0.28, 2) : 0.025;
+export function renderArenaBackground(ctx, width, height, time, pointer) {
+  const cell = width < 600 ? 7 : 8, line = width < 600 ? 10 : 11;
+  const word = 'ARENACHALLENGE';
+  ctx.font = '9px "IBM Plex Mono", monospace';
+  ctx.fillStyle = '#b8bfbd';
+  for (let y = 4, row = 0; y < height; y += line, row++) {
+    for (let x = 2, col = 0; x < width; x += cell, col++) {
+      const nx = x / width, ny = y / height;
+      const density = arenaDensity(nx, ny, time);
+      const hash = Math.sin(col * 127.1 + row * 311.7) * 43758.5453;
+      const grain = hash - Math.floor(hash);
+      const distance = Math.hypot(x - pointer.x, y - pointer.y);
+      const wake = pointer.active ? Math.max(0, 1 - distance / 140) : 0;
+      let pulse = 0;
+      for (const wave of pointer.waves) pulse += Math.exp(-Math.pow((Math.hypot(x - wave.x, y - wave.y) - wave.radius) / 40, 2)) * wave.strength * 0.24;
+      const value = Math.min(1, density * (1 + wake * 0.45 + pulse));
+      const dust = grain > 0.92 && value < 0.05;
+      if (value < 0.028 && !dust) continue;
+      let glyph = '.';
+      if (value > 0.48) glyph = word[(col + row * 3 + Math.floor(time * 0.45)) % word.length];
+      else if (value > 0.28) glyph = '+';
+      else if (value > 0.12) glyph = ':';
+      ctx.globalAlpha = dust ? 0.1 : 0.1 + value * 0.62;
+      ctx.fillText(glyph, x + Math.sin(time * 0.6 + ny * 8) * wake * density * 5, y);
+    }
   }
-  if (mode === 'wireframe') {
-    const depth = 0.25 + ny * 0.9;
-    const perspective = (nx - 0.5) / depth;
-    const wave = Math.sin(perspective * 5 + time * 0.18) * 0.055;
-    const horizon = Math.abs(Math.sin((1 / depth + wave) * 28 - time * 0.28));
-    const longitude = Math.abs(Math.sin(perspective * 24));
-    return Math.max(Math.pow(1 - horizon, 9), Math.pow(1 - longitude, 15)) * 0.85;
-  }
-  if (mode === 'circuit') {
-    const cellX = Math.floor(x / 81), cellY = Math.floor(y / 96);
-    const row = Math.floor(y / 12), column = Math.floor(x / 9);
-    const trace = (column % 9 === 0 && (cellY + cellX) % 3 !== 0) ||
-      (row % 8 === 0 && (cellX + cellY) % 3 !== 1);
-    if (!trace) return 0.025;
-    const pulse = Math.pow(Math.max(0, Math.cos(x * 0.012 + y * 0.009 - time * 0.65)), 14);
-    return 0.18 + pulse * 0.82;
-  }
-  const wx = nx + 0.06 * Math.sin(ny * 5 + time * 0.7);
-  const wy = ny + 0.04 * Math.cos(nx * 6 - time * 0.6);
-  const flow = Math.sin(wx * 14 + wy * 6 + time) * Math.cos(wy * 10 - wx * 4 - time * 0.7);
-  return Math.pow(Math.max(0, 1 - Math.abs(flow - 0.2) * 2.2), 2);
+  ctx.lineWidth = 0.6;
+  ctx.strokeStyle = '#a8b0ac';
+  ctx.globalAlpha = 0.12;
+  const left = width * 0.06, right = width * 0.835;
+  const top = width < 700 ? 70 : 84, lower = height * 0.64;
+  ctx.beginPath();
+  for (const x of [left, right]) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
+  for (const y of [top, lower]) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
+  ctx.stroke();
+  ctx.globalAlpha = 0.42;
+  for (const x of [left, right]) for (const y of [top, lower]) ctx.fillRect(x - 1, y - 1, 2, 2);
+  ctx.globalAlpha = 1;
 }

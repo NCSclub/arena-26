@@ -6,19 +6,19 @@ import { isWhitePixel } from './dist/pixel-transition.js';
 import { resolveLanguage } from './dist/i18n.js';
 import { translations } from './dist/translations.js';
 import { readFile } from 'node:fs/promises';
-import { backgroundModes, backgroundSignal, resolveBackground } from './dist/background-patterns.js';
+import { arenaDensity } from './dist/background-patterns.js';
 
-test('Every background evolves without pointer input and remains bounded', () => {
-  assert.equal(resolveBackground('invalid'), 'circuit');
-  for (const mode of backgroundModes) {
-    let changes = 0;
-    for (let y = 0; y < 720; y += 12) for (let x = 0; x < 1280; x += 9) {
-      const a = backgroundSignal(mode, x, y, 1280, 720, 0);
-      const b = backgroundSignal(mode, x, y, 1280, 720, 3);
-      assert.ok(a >= 0 && a <= 1 && b >= 0 && b <= 1, mode);
-      if (Math.abs(a - b) > 0.05) changes++;
-    }
-    assert.ok(changes > 100, `${mode} needs visible idle motion`);
+test('Reference background moves autonomously and protects the centre', () => {
+  let changes = 0;
+  for (let y = 0; y <= 1; y += .02) for (let x = 0; x <= 1; x += .02) {
+    const a = arenaDensity(x, y, 0), b = arenaDensity(x, y, 8);
+    assert.ok(a >= 0 && a <= 1 && b >= 0 && b <= 1);
+    if (Math.abs(a - b) > .025) changes++;
+  }
+  assert.ok(changes > 100);
+  for (const time of [0, 8, 30, 100]) {
+    assert.ok(arenaDensity(.5, .45, time) < .01);
+    assert.ok(arenaDensity(.04, .8, time) > .1);
   }
 });
 
