@@ -19,13 +19,14 @@ try {
   const shared = {
     palette: '#b6c1bb', cellSize: 9, charset: ' .:+*#@', mark: 'glyph',
     clear, clearPadding: 6, clearSoftness: 34, clearStrength: .95,
-    speed: 1, opacity: .35, lazy: false, globalLook: false
+    speed: 2.2, reducedMotion: false, opacity: .35, lazy: false, globalLook: false
   };
   const layers = [
     background(document.querySelector('#drift-layer'), { ...shared, preset: drift, cursor: 'trail' }),
     background(document.querySelector('#contour-layer'), { ...shared, preset: contour, cursor: 'lantern' })
   ];
   if (layers.some(layer => !layer.supported)) throw new Error('WebGL2 is unavailable in this browser.');
+  layers.forEach(layer => layer.play());
   window.previewBackgrounds = layers;
   slider.addEventListener('input', () => {
     const blend = Number(slider.value) / 100;
@@ -40,8 +41,9 @@ try {
     layers.forEach(layer => paused ? layer.pause() : layer.play());
     pauseButton.setAttribute('aria-pressed', String(paused));
     pauseButton.textContent = paused ? 'Resume ▷' : 'Pause Ⅱ';
+    status.textContent = paused ? 'Animation paused' : 'Animating · 2.2× speed';
   });
-  status.textContent = 'Move your mouse to explore';
+  status.textContent = 'Animating · 2.2× speed';
   document.body.dataset.previewReady = 'true';
 } catch (error) {
   status.textContent = 'Preview could not load. Please reload.';
