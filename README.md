@@ -57,7 +57,7 @@ npm run dev
 
 Le serveur local écoute sur `127.0.0.1:4173` ; `PORT` permet de choisir un autre port. Pour les essais locaux de l’API, utiliser une base de test, fournir les variables serveur et définir `ARENA_LOCAL_DEV=true` avec `PORT=4175`. Ce mode accepte uniquement l’origine locale explicitement prévue et ne s’active pas sur Vercel.
 
-Les animations démarrent automatiquement. Les boutons Pause ont été retirés ; la préférence système de réduction des animations reste respectée. Les onglets masqués suspendent les boucles, et les canvas hors écran interrompent leur rendu. Le fond réduit progressivement la densité dans la bande centrale pour éviter les grandes masses claires derrière le texte.
+Le fond ASCII démarre automatiquement et reste animé et interactif, indépendamment des anciens contrôles de pause et de la préférence système de réduction des animations, conformément à la demande de Fadi. Les boutons Pause restent retirés. Les autres animations conservent leur comportement de réduction des mouvements. Les onglets masqués suspendent les boucles, et les canvas hors écran interrompent leur rendu. Le fond réduit progressivement la densité dans la bande centrale pour éviter les grandes masses claires derrière le texte.
 
 ## Déploiement
 

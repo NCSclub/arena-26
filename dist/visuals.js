@@ -80,8 +80,7 @@ function engine(canvas, render) {
 
 const backgroundCanvas = $('[data-ascii="background"]');
 try {
-  const background = createAsciiField(backgroundCanvas);
-  engines.push(() => motionOff ? background.pause() : background.play());
+  createAsciiField(backgroundCanvas);
 } catch (error) {
   backgroundCanvas.hidden = true;
   console.warn("ASCII background unavailable:", error);

@@ -1,7 +1,7 @@
 import { REGISTRATION_CLOSES_AT } from "./event-config.js";
 import { initCountdown } from "./countdown.js?v=registrations";
 import { registrationPayload } from "./registration-data.js";
-import { motionOff } from "./visuals.js?v=registrations";
+import { motionOff } from "./visuals.js?v=background-autoplay";
 import { t } from "./i18n.js";
 const $ = (selector) => document.querySelector(selector);
 history.scrollRestoration = "manual";
