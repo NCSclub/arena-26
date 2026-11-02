@@ -169,12 +169,7 @@ export const translations = {
     "export": "Export my answers",
     "exported": "Answers exported. No registration has been sent to the organisers.",
     "registrationPageTitle": "Registration — ARENA 26",
-    "faqArticle": "",
-    "backgroundLabel": "BACKGROUND",
-    "backgroundCircuit": "Circuit",
-    "backgroundRain": "Signal rain",
-    "backgroundWireframe": "Wireframe",
-    "backgroundFlow": "Flow (original)"
+    "faqArticle": ""
   },
   "fr": {
     "skip": "Aller au contenu",
@@ -346,11 +341,6 @@ export const translations = {
     "export": "Exporter mes réponses",
     "exported": "Réponses exportées. Aucune inscription n’a été envoyée à l’organisation.",
     "registrationPageTitle": "Inscription — ARENA 26",
-    "faqArticle": "LE ",
-    "backgroundLabel": "FOND ANIMÉ",
-    "backgroundCircuit": "Circuit",
-    "backgroundRain": "Pluie de signaux",
-    "backgroundWireframe": "Maillage",
-    "backgroundFlow": "Flux (original)"
+    "faqArticle": "LE "
   }
 };

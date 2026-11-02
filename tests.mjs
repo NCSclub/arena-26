@@ -6,21 +6,6 @@ import { isWhitePixel } from './dist/pixel-transition.js';
 import { resolveLanguage } from './dist/i18n.js';
 import { translations } from './dist/translations.js';
 import { readFile } from 'node:fs/promises';
-import { backgroundModes, backgroundSignal, resolveBackground } from './dist/background-patterns.js';
-
-test('Every background evolves without pointer input and remains bounded', () => {
-  assert.equal(resolveBackground('invalid'), 'circuit');
-  for (const mode of backgroundModes) {
-    let changes = 0;
-    for (let y = 0; y < 720; y += 12) for (let x = 0; x < 1280; x += 9) {
-      const a = backgroundSignal(mode, x, y, 1280, 720, 0);
-      const b = backgroundSignal(mode, x, y, 1280, 720, 3);
-      assert.ok(a >= 0 && a <= 1 && b >= 0 && b <= 1, mode);
-      if (Math.abs(a - b) > 0.05) changes++;
-    }
-    assert.ok(changes > 100, `${mode} needs visible idle motion`);
-  }
-});
 
 test('New visitors use English; only an explicit French preference selects French', () => {
   for (const saved of [null, undefined, '', 'en', 'de', 'fr-FR']) assert.equal(resolveLanguage(saved), 'en');
