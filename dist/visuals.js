@@ -1,6 +1,7 @@
 import { createAsciiField } from "./ascii-background.js";
 import { isWhitePixel } from "./pixel-transition.js";
 import { t } from "./i18n.js";
+import { advanceOrbit, beginOrbitReturn, morphFrame } from "./sculpture-motion.js";
 const $ = (selector) => document.querySelector(selector);
 export let motionOff = sessionStorage.getItem("arena-motion") === "off";
 let logoPaused = false;
@@ -94,8 +95,7 @@ mask.width = mask.height = 90;
 const mc = mask.getContext("2d", { willReadFrequently: true });
 const shapes = [];
 let elapsed = 0,
-  previous = 0,
-  offset = 0;
+  previous = 0;
 const sculpture = $(".ascii-sculpture");
 const sculptureCanvas = $("#logo-ascii");
 const orbit = {
@@ -107,6 +107,7 @@ const orbit = {
   x: 0,
   y: 0,
   time: 0,
+  returning: false,
 };
 let orbitResetTimer = null;
 sculptureCanvas.tabIndex = 0;
@@ -114,14 +115,16 @@ sculptureCanvas.setAttribute("aria-label", t("sculptureHelp"));
 sculptureCanvas.addEventListener("pointerdown", (event) => {
   if (event.button !== 0 || orbit.pointer !== null) return;
   clearTimeout(orbitResetTimer);
+  event.preventDefault();
   event.stopPropagation();
+  orbit.returning = false;
   orbit.pointer = event.pointerId;
   orbit.x = event.clientX;
   orbit.y = event.clientY;
   orbit.time = performance.now();
   orbit.vx = orbit.vy = 0;
   sculptureCanvas.setPointerCapture(event.pointerId);
-  sculptureCanvas.focus({ preventScroll: true });
+  sculptureCanvas.blur();
   sculpture.classList.add("dragging");
 });
 sculptureCanvas.addEventListener("pointermove", (event) => {
@@ -154,14 +157,18 @@ sculptureCanvas.addEventListener("lostpointercapture", releaseOrbit);
 function resetOrbit() {
   clearTimeout(orbitResetTimer);
   orbitResetTimer = null;
-  orbit.yaw = orbit.pitch = orbit.vx = orbit.vy = 0;
+  beginOrbitReturn(orbit);
+  if (motionOff || logoPaused) {
+    orbit.yaw = orbit.pitch = orbit.vx = orbit.vy = 0;
+    orbit.returning = false;
+  }
   redrawLogo();
 }
 function scheduleOrbitReset() {
   clearTimeout(orbitResetTimer);
   orbitResetTimer = setTimeout(() => {
     orbitResetTimer = null;
-    if (orbit.pointer === null) resetOrbit();
+    if (orbit.pointer === null) beginOrbitReturn(orbit);
   }, 5000);
 }
 sculptureCanvas.addEventListener("dblclick", resetOrbit);
@@ -178,6 +185,7 @@ sculptureCanvas.addEventListener("keydown", (event) => {
     return;
   }
   orbit.vx = orbit.vy = 0;
+  orbit.returning = false;
   if (event.key === "ArrowLeft") orbit.yaw -= 0.18;
   if (event.key === "ArrowRight") orbit.yaw += 0.18;
   if (event.key === "ArrowUp") orbit.pitch = Math.max(-1.2, orbit.pitch - 0.18);
@@ -187,7 +195,8 @@ sculptureCanvas.addEventListener("keydown", (event) => {
   scheduleOrbitReset();
 });
 function buildShapes() {
-  for (let kind = 0; kind < 1; kind++) {
+  shapes.length = 0;
+  for (let kind = 0; kind < 2; kind++) {
     mc.clearRect(0, 0, 90, 90);
     if (kind === 0) mc.drawImage(image, 5, 5, 80, 80);
     else {
@@ -201,11 +210,11 @@ function buildShapes() {
     for (let y = 0; y < 90; y++)
       for (let x = 0; x < 90; x++) {
         const i = (y * 90 + x) * 4;
+        const brightness = Math.max(data[i], data[i + 1], data[i + 2]);
+        const saturation = brightness - Math.min(data[i], data[i + 1], data[i + 2]);
         if (
           data[i + 3] > 128 &&
-          Math.max(data[i], data[i + 1], data[i + 2]) -
-            Math.min(data[i], data[i + 1], data[i + 2]) >
-            20
+          (kind === 1 ? brightness > 128 : saturation > 20)
         ) {
           points.push({ x: (x - 45) / 38, y: (y - 45) / 38, z: 0.11 });
           if ((x + y) % 3 === 0)
@@ -230,22 +239,17 @@ const redrawLogo = engine($("#logo-ascii"), (ctx, w, h, now) => {
   if (!shapes.length) return;
   const dt = previous ? Math.min(0.05, now - previous) : 0;
   if (previous && !motionOff && !logoPaused && orbit.pointer === null)
-    elapsed += Math.min(1, now - previous);
+    elapsed += dt;
   if (orbit.pointer === null && !motionOff && !logoPaused) {
-    orbit.yaw += orbit.vx * dt;
-    orbit.pitch = Math.max(-1.2, Math.min(1.2, orbit.pitch + orbit.vy * dt));
-    orbit.vx *= Math.exp(-dt * 5);
-    orbit.vy *= Math.exp(-dt * 5);
+    advanceOrbit(orbit, dt);
   }
   previous = now;
-  const time = elapsed + offset;
-  const state = 0;
-  const progress = 0;
-  const blend = 0;
-  const from = shapes[0],
-    to = shapes[0];
-  const ry =
-    orbit.yaw + (state === 2 ? time * 0.35 : Math.sin(time * 0.65) * 0.75);
+  const time = elapsed;
+  const transition = morphFrame(time);
+  const blend = transition.blend;
+  const from = shapes[transition.from],
+    to = shapes[transition.to];
+  const ry = orbit.yaw + Math.sin(time * 0.65) * 0.75;
   const rx = orbit.pitch - 0.16 + Math.sin(time * 0.4) * 0.1;
   sculptureCanvas.dataset.rotation = `${orbit.yaw.toFixed(3)},${orbit.pitch.toFixed(3)}`;
   const scale = Math.min(w * 0.36, h * 0.4);
@@ -286,7 +290,8 @@ const redrawLogo = engine($("#logo-ascii"), (ctx, w, h, now) => {
     );
   }
   ctx.globalAlpha = 1;
-  morphState = progress > 0.5 ? (state + 1) % 2 : state;
+  morphState = blend > 0.5 ? transition.to : transition.from;
+  sculptureCanvas.dataset.shape = morphState === 0 ? "arena" : "code";
   $("#morph-label").textContent = ["01 — ARENA", "02 — CODE"][
     morphState
   ];

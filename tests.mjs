@@ -6,6 +6,39 @@ import { isWhitePixel } from './dist/pixel-transition.js';
 import { resolveLanguage } from './dist/i18n.js';
 import { translations } from './dist/translations.js';
 import { readFile } from 'node:fs/promises';
+import { advanceOrbit, beginOrbitReturn, morphFrame } from './dist/sculpture-motion.js';
+
+test('Sculpture returns gradually to the nearest resting orientation at any frame rate', () => {
+  const original = { yaw: Math.PI * 2 + 1, pitch: .5, vx: 0, vy: 0 };
+  const slow = { ...original }, fast = { ...original };
+  beginOrbitReturn(slow);
+  beginOrbitReturn(fast);
+  assert.ok(Math.abs(Math.cos(slow.yaw) - Math.cos(original.yaw)) < 1e-10);
+  advanceOrbit(slow, 1 / 30);
+  assert.ok(slow.yaw > .9 && slow.yaw < 1);
+  for (let i = 1; i < 60; i++) advanceOrbit(slow, 1 / 30);
+  for (let i = 0; i < 120; i++) advanceOrbit(fast, 1 / 60);
+  assert.ok(Math.abs(slow.yaw) < .002);
+  assert.ok(Math.abs(slow.yaw - fast.yaw) < 1e-10);
+  assert.ok(Math.abs(slow.pitch - fast.pitch) < 1e-10);
+});
+
+test('Sculpture holds each symbol and morphs continuously in both directions', () => {
+  const weight = time => {
+    const frame = morphFrame(time);
+    return frame.from === 0 ? frame.blend : 1 - frame.blend;
+  };
+  assert.equal(weight(0), 0);
+  assert.equal(weight(3), 0);
+  assert.equal(weight(5), .5);
+  assert.equal(weight(7), 1);
+  assert.equal(weight(9), 1);
+  assert.equal(weight(11), .5);
+  assert.equal(weight(12), 0);
+  for (const boundary of [4, 6, 10, 12, 18, 24]) {
+    assert.ok(Math.abs(weight(boundary - .001) - weight(boundary + .001)) < .00001);
+  }
+});
 
 test('New visitors use English; only an explicit French preference selects French', () => {
   for (const saved of [null, undefined, '', 'en', 'de', 'fr-FR']) assert.equal(resolveLanguage(saved), 'en');
