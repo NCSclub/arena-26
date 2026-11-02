@@ -147,9 +147,14 @@ document.querySelectorAll('[data-ascii="background"]').forEach((canvas) => {
     canvas.dataset.ripples = String(waves.length);
     canvas.dataset.trail = String(motionOff ? 0 : trail.length);
     canvas.dataset.background = 'arena-original';
+    const bounds = canvas.getBoundingClientRect();
+    const masks = [...area.querySelectorAll('.hero-lockup, #hero-title, .hero-description, .event-date, .hero-actions')]
+      .map(element => element.getBoundingClientRect())
+      .filter(rect => rect.width && rect.height)
+      .map(rect => ({left: rect.left - bounds.left, right: rect.right - bounds.left, top: rect.top - bounds.top, bottom: rect.bottom - bounds.top}));
     renderArenaBackground(ctx, w, h, motionOff ? 0 : now, {
       x: px, y: py, active: !motionOff, time: now,
-      ripples: motionOff ? [] : ripples, trail: motionOff ? [] : trail
+      ripples: motionOff ? [] : ripples, trail: motionOff ? [] : trail, masks
     });
   });
 });

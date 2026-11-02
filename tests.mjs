@@ -6,7 +6,7 @@ import { isWhitePixel } from './dist/pixel-transition.js';
 import { resolveLanguage } from './dist/i18n.js';
 import { translations } from './dist/translations.js';
 import { readFile } from 'node:fs/promises';
-import { arenaDensity } from './dist/background-patterns.js';
+import { arenaDensity, foregroundFade } from './dist/background-patterns.js';
 import { addSignalPoint, signalField } from './dist/signal-field.js';
 
 test('Digital pulses stay tight while overlapping clicks and drag traces decay', () => {
@@ -25,7 +25,7 @@ test('Digital pulses stay tight while overlapping clicks and drag traces decay',
   assert.ok(Math.abs(crowded.x) <= 3 && Math.abs(crowded.y) <= 3 && crowded.energy <= 1);
 });
 
-test('Reference background moves autonomously and protects the centre', () => {
+test('ASCII formations move throughout the centre while foreground content stays readable', () => {
   let changes = 0;
   for (let y = 0; y <= 1; y += .02) for (let x = 0; x <= 1; x += .02) {
     const a = arenaDensity(x, y, 0), b = arenaDensity(x, y, 8);
@@ -33,10 +33,12 @@ test('Reference background moves autonomously and protects the centre', () => {
     if (Math.abs(a - b) > .025) changes++;
   }
   assert.ok(changes > 100);
-  for (const time of [0, 8, 30, 100]) {
-    assert.ok(arenaDensity(.5, .45, time) < .08);
-    assert.ok(arenaDensity(.04, .8, time) > .1);
-  }
+  const centre = Array.from({length: 80}, (_, time) => arenaDensity(.5, .45, time * .25));
+  assert.ok(Math.max(...centre) > .6);
+  assert.ok(Math.max(...centre) - Math.min(...centre) > .4);
+  const masks = [{left: 100, top: 100, right: 200, bottom: 200}];
+  assert.equal(foregroundFade(150, 150, masks), .12);
+  assert.equal(foregroundFade(150, 40, masks), 1);
 });
 
 test('New visitors use English; only an explicit French preference selects French', () => {
