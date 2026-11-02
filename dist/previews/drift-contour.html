@@ -11,8 +11,8 @@
   <script type="module" src="/previews/drift-contour.js"></script>
 </head>
 <body>
-  <div id="drift-layer" class="preview-layer" aria-hidden="true"></div>
-  <div id="contour-layer" class="preview-layer" aria-hidden="true"></div>
+  <svg class="logo-filter" aria-hidden="true"><defs><filter id="transparent-logo" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  3 3 3 0 -0.4"/></filter></defs></svg>
+  <canvas id="mixed-field" class="preview-layer" aria-hidden="true"></canvas>
   <header class="header wrap">
     <a class="brand" href="/"><img src="/assets/arena-logo-2.png" alt="" width="38" height="38"><span>ARENA<span class="edition">/26</span></span></a>
     <nav aria-label="Main navigation"><a href="/#about">The challenge</a><a href="/#schedule">Schedule</a><a href="/#faq">Event info</a></nav>
@@ -31,9 +31,9 @@
     </section>
   </main>
   <aside class="blend-control" aria-label="Background preview controls">
-    <div class="blend-heading"><span>DRIFT × CONTOUR</span><output id="blend-value" for="blend">50 / 50</output></div>
+    <div class="blend-heading"><span>DRIFT / CONTOUR</span><output id="blend-value" for="blend">90 / 10</output></div>
     <label for="blend" class="blend-label"><span>More Drift</span><span>More Contour</span></label>
-    <input id="blend" type="range" min="0" max="100" value="50" aria-label="Contour blend percentage">
+    <input id="blend" type="range" min="0" max="100" value="10" aria-label="Contour blend percentage">
     <div class="blend-footer"><span id="preview-status" role="status">Loading preview…</span><button id="preview-pause" type="button" aria-pressed="false">Pause Ⅱ</button></div>
   </aside>
 </body>

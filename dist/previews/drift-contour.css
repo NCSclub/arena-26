@@ -1,11 +1,12 @@
 html,body{min-height:100%;background:#090b0b;color-scheme:dark}
 body{isolation:isolate}
 .preview-layer{position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;background:transparent}
-#drift-layer{opacity:1}
-#contour-layer{opacity:1;mix-blend-mode:screen}
+.logo-filter{position:absolute;width:0;height:0;overflow:hidden}
+.hero-lockup{filter:url(#transparent-logo);mix-blend-mode:normal}
+.hero h1,.hero-description,.event-date>.mono{text-shadow:0 2px 12px #090b0b}
 .hero{min-height:100svh}
 .hero-content{padding-top:70px;padding-bottom:150px}
-.hero-description{font-size:13px}
+.hero-description{font-size:13px;color:#c4ccc8;text-shadow:0 1px 4px #090b0b,0 0 12px #090b0b}
 .hero-bottom{bottom:32px}
 .blend-control{position:fixed;z-index:10;left:24px;bottom:24px;width:260px;padding:16px 18px;background:#090d0eef;border:1px solid #35413c;font:10px/1.5 var(--mono);color:#c0ccc5;backdrop-filter:blur(12px)}
 .blend-heading,.blend-label,.blend-footer{display:flex;justify-content:space-between;align-items:center;gap:14px}
