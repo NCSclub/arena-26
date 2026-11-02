@@ -2421,3 +2421,33 @@ body { isolation: isolate; background: #000; }
   .hero-content { padding: 36px 20px 100px; }
   .hero-content::before { inset-inline: -12px; }
 }
+
+.faq {
+  background: rgb(4 7 7 / 97%);
+  border: 1px solid #293a33;
+  padding: 56px;
+  gap: 64px;
+}
+.faq .section-label { display: block; margin-bottom: 24px; color: #a5bbb0; font-size: 10px; }
+.faq-list details { border-color: #2b3b34; }
+.faq-list summary {
+  padding: 22px 0;
+  align-items: center;
+  color: #f3f7f5;
+  font-size: clamp(16px, 1.1vw, 18px);
+  font-weight: 600;
+  line-height: 1.5;
+}
+.faq-list summary:hover, .faq-list details[open] summary { color: var(--teal); }
+.faq-list details p {
+  padding: 0 32px 24px 0;
+  max-width: 60ch;
+  color: #becbc4;
+  font-size: 15px;
+  line-height: 1.8;
+}
+@media (max-width: 700px) {
+  .faq { padding: 32px 24px; gap: 28px; }
+  .faq-list summary { padding-block: 20px; }
+  .faq-list details p { padding-right: 16px; }
+}
