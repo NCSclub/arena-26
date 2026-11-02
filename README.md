@@ -1,56 +1,71 @@
-# ARENA 26
+# ARENA — NCS
 
-## Fond ASCII shadcn intégré
+Site de l’événement ARENA, en anglais. Projet indépendant du formulaire de l’édition précédente.
 
-Ouvrir `/` sur le serveur local pour voir le fond sur le site complet ; `/previews/drift-contour.html` conserve une démonstration isolée du même moteur. Le fond a été reconstruit à partir de l’observation du hero et de son rendu public sur [shadcn.io/background](https://www.shadcn.io/background). Il utilise le même type de bruit déformé à quatre octaves, une trame de Bayer, des cellules de 11 px et les caractères espace / point / deux-points / plus, puis les lettres de « BACKGROUNDS » dans les zones denses. Les formations ne sont plus découpées en ellipses indépendantes : le champ reste continu derrière la page. Un halo sombre à bords progressifs, placé en CSS sous le contenu du hero, protège le logo, le titre, le texte et les boutons sans découper la simulation. Les caractères sont gris neutre sur noir pur. La vitesse de dérive est naturelle, sans accélération 2,2× ; la boucle fonctionne à 30 images/s au repos et à 60 pendant l’interaction, puis se suspend dans les onglets masqués. Le pointeur alimente un véritable champ de vitesse et de densité : advection, rotation locale, quatre passes de pression et projection reproduisent le sillage fluide de la référence. La largeur et la force dépendent de la vitesse du geste ; le mouvement continue après le relâchement puis se dissipe, sans remettre la dérive à zéro. La grille, l’injection, l’amortissement et le confinement suivent le rendu public de shadcn ; le rayon du sillage a été réduit d’environ 25 % pour garder une interaction plus précise. Le solveur WebGL2 est dans `dist/fluid-wake.js` et nécessite les cibles flottantes `EXT_color_buffer_float`. Le logo reste transparent et le bouton Pause permet de suspendre et reprendre le même état. Le moteur local est `dist/ascii-background.js`, sans dépendance réseau. Un seul canvas fixe, placé directement dans le body, est partagé par la page d’accueil et la vue d’inscription. `dist/visuals.js` initialise ce moteur et le relie au bouton global Pause / Reprendre ; les changements de langue, de route et le défilement ne recréent pas la simulation. Le hero couvre au minimum toute la hauteur visible (`100svh`) et centre son contenu, avec un espacement réduit sur les écrans bas pour conserver les boutons dans la première vue. Les sections blanches conservent leur surface et leurs transitions. En cas d’absence de WebGL2 ou de cibles flottantes, le contenu et le formulaire restent utilisables sur fond noir.
+- Site : https://arena-26.vercel.app/
+- Administration : https://arena-26.vercel.app/admin
+- Dépôt privé : https://github.com/NCSclub/arena-26
+- Clôture des inscriptions : **9 novembre 2026 à 17 h, heure algérienne** (`2026-11-09T17:00:00+01:00`).
 
-Le site conserve les contributions de `Moufdi-branch` et le correctif de centrage du symbole du programme. Les références au bouton de pause de sculpture absent sont facultatives pour permettre l’initialisation des contrôles.
+## Architecture
 
-Projet indépendant du site d’inscription de l’édition précédente. HTML, CSS et JavaScript natifs ; aucune installation de dépendances nécessaire.
+HTML, CSS et JavaScript natifs, avec quatre fonctions Node.js 24 sur Vercel. Aucune nouvelle dépendance serveur. Le plan gratuit Upstash Redis conserve les inscriptions ; l’éviction et le passage automatique à un plan payant sont désactivés.
 
-## Démarrage
+| Fichier | Rôle |
+| --- | --- |
+| `dist/index.html`, `dist/style.css` | Page d’accueil et formulaire en trois étapes |
+| `dist/app.js` | Validation du formulaire, récapitulatif, envoi et confirmation |
+| `dist/translations.js`, `dist/i18n.js` | Textes anglais ; aucune sélection de langue ni version française |
+| `dist/event-config.js` | Échéance partagée par le client et le serveur |
+| `dist/countdown.js` | Chiffres pixelisés avec transition de décodage ASCII |
+| `dist/assets/arena-brand.png` | Logo original transparent fourni par Fadi |
+| `dist/assets/arena-brand.svg`, `arena-symbol.svg` | Cadrages SVG du logo fourni, sans retouche de ses pixels |
+| `dist/ascii-background.js`, `dist/fluid-wake.js` | Fond ASCII WebGL2 et interaction au pointeur |
+| `dist/visuals.js`, `dist/sculpture-motion.js` | Morphing ARENA ↔ `</>`, rotation et retour progressif |
+| `dist/admin.html`, `admin.css`, `admin.js` | Connexion, liste paginée, recherche dans la page et fiches détaillées |
+| `api/registrations.js` | Enregistrement public, validé et limité en fréquence |
+| `api/admin/session.js` | Connexion, vérification de session et déconnexion |
+| `api/admin/registrations.js` | Liste privée de 50 inscriptions par page et compteurs globaux |
+| `api/admin/export.js` | Export CSV privé de toutes les inscriptions |
+| `lib/http.js`, `security.js`, `store.js`, `validation.js` | Contrôles HTTP, authentification, stockage atomique et validation |
+| `server.mjs` | Serveur local avec les mêmes routes API |
 
-Depuis ce dossier :
+## Inscription et données
+
+Le formulaire envoie les coordonnées, les informations étudiantes, l’équipe facultative, le transport et les attentes. Le serveur valide les types, les longueurs, les choix conditionnels et l’échéance. Un identifiant de requête permet de reprendre un envoi interrompu sans créer de doublon ; l’email normalisé est unique. Un script Redis enregistre atomiquement la fiche, les index et les compteurs. Le navigateur affiche une confirmation uniquement après réception de la réponse du stockage.
+
+Les données sont dans le hash privé `arena:registrations`. Un index trié les classe par date, et des index HMAC assurent la déduplication sans exposer les emails dans les clés. Aucun jeton Redis ni secret d’administration n’est envoyé au navigateur. Le formulaire contient un champ piège contre les soumissions automatisées et une information sur l’utilisation des données par NCS.
+
+Les inscriptions sont conservées sans expiration automatique. Après l’événement, l’organisation doit décider de la durée de conservation et supprimer les données devenues inutiles via le stockage. Aucun email de confirmation n’est envoyé.
+
+## Administration
+
+Le mot de passe est stocké uniquement sous forme de hash scrypt dans Vercel. La connexion crée un jeton opaque aléatoire, dont le hash est conservé dans Redis pendant huit heures. Le cookie est `HttpOnly`, `Secure`, `SameSite=Strict` et limité au chemin `/api/admin`. La déconnexion invalide la session côté serveur. Modifier le hash du mot de passe invalide aussi les anciennes sessions.
+
+Les accès à la liste et au CSV sont vérifiés côté serveur à chaque requête. Les écritures exigent une origine autorisée. Les connexions et inscriptions sont limitées en fréquence dans Redis ; les réponses privées ne sont pas mises en cache. L’export CSV protège les cellules contre l’interprétation comme formules dans un tableur.
+
+Le mot de passe initial est remis séparément dans un fichier local privé, jamais dans Git. Pour le changer : générer un nouveau sel et un hash scrypt au format `scrypt:sel_hex_32:hash_hex_128`, remplacer `ADMIN_PASSWORD_HASH` dans Vercel, puis redéployer.
+
+## Configuration et développement
+
+Les noms de variables figurent dans `.env.example`. Configurer `KV_REST_API_URL`, `KV_REST_API_TOKEN`, `ADMIN_PASSWORD_HASH`, `SESSION_SECRET` et `SITE_URL` côté serveur. L’intégration Upstash injecte ses variables uniquement dans l’environnement Production. Les secrets et fichiers `.vercel/` sont exclus de Git et du déploiement.
 
 ```sh
+npm test
 npm run dev
 ```
 
-Ouvrir http://127.0.0.1:4173. Vérifications : `npm test`.
+Le serveur local écoute sur `127.0.0.1:4173` ; `PORT` permet de choisir un autre port. Pour les essais locaux de l’API, utiliser une base de test, fournir les variables serveur et définir `ARENA_LOCAL_DEV=true` avec `PORT=4175`. Ce mode accepte uniquement l’origine locale explicitement prévue et ne s’active pas sur Vercel.
 
-## Contenu
+Les animations démarrent automatiquement. Les boutons Pause ont été retirés ; la préférence système de réduction des animations reste respectée. Les onglets masqués suspendent les boucles, et les canvas hors écran interrompent leur rendu. Le fond réduit progressivement la densité dans la bande centrale pour éviter les grandes masses claires derrière le texte.
 
-- Landing page responsive inspirée des frames Figma ARENA 26.
-- Anglais par défaut à la première visite, avec sélecteur EN / FR visible sur ordinateur et mobile. Le choix est mémorisé sur cet appareil ; le changement de langue conserve les réponses, l’étape du formulaire et l’état des animations.
-- Fond ASCII animé, sensible au pointeur et aux clics.
-- Logo ARENA original en sculpture ASCII sans cadre, avec rotation, perspective et transition vers des balises de code. Le point de vue revient automatiquement à sa position initiale après quelques secondes d'inactivité.
-- Animations automatiques au chargement avec interaction au pointeur et aux clics. Le bouton de pause mémorise le choix pour la session. Les canvas hors écran et les onglets masqués suspendent leur boucle.
-- Programme prévisionnel et FAQ dépliables.
-- Formulaire en trois étapes : profil, équipe/transport, vérification et export JSON.
-- Champs de l’ancien formulaire conservés, notamment trois coéquipiers facultatifs et l’adresse de transport conditionnelle.
+## Déploiement
 
-## À configurer avant ouverture des inscriptions
+Le projet Vercel est `arena-26` dans `strongholdfadi-1798s-projects`. Le plan Hobby bloque le déploiement Git automatique d’un dépôt privé d’organisation ; publier avec le CLI après les vérifications :
 
-La date, le lieu, les horaires définitifs et les modalités du transport doivent être confirmés par l’organisation. Le compte à rebours du hero utilise provisoirement l’échéance `2027-01-09T18:20:58+01:00` en heure algérienne (`Africa/Algiers`), fixée à 68 jours au moment de sa configuration à la demande de Fadi. Cette échéance est absolue et ne se réinitialise pas à chaque visite. Pour la date officielle, modifier `data-event-start` dans `dist/index.html` et retirer `data-event-provisional="true"`. Sans date valide, le compteur affiche des tirets et un état explicite.
+```sh
+npx vercel@50.28.0 deploy --prod --skip-domain --scope team_4RJFOPhu7qwUTVZXv8Hp2ISV
+npx vercel@50.28.0 promote URL_DU_DEPLOIEMENT --scope team_4RJFOPhu7qwUTVZXv8Hp2ISV
+```
 
-Le formulaire est un aperçu fonctionnel : il valide les réponses et permet un export local. Aucun endpoint d’inscription n’est configuré et aucune donnée n’est transmise ou enregistrée durablement. Brancher le service de réception, la validation côté serveur et la gestion des erreurs avant d’activer de véritables inscriptions.
-
-Les polices Google Fonts nécessitent une connexion ; les polices système servent de repli. Les fichiers du logo sont téléchargés depuis Figma et inclus dans `dist/assets`. Le fond ASCII est une implémentation originale inspirée visuellement de la référence shadcn.io.
-
-La seconde direction reprend la composition Figma : logo centré, slogan sur une ligne sur grand écran, accents teal/bleu/jaune et sections blanches se dissolvant en pixels vers le noir. Références visuelles consultées : [shadcn.io](https://www.shadcn.io/background), [Asciify](https://asciify.org/) et [Pulsewidth / Motus](https://www.motus.art/pulsewidth/). Les moteurs de mouvement sont dans `dist/visuals.js` ; le formulaire reste dans `dist/app.js`.
-
-## Hébergement
-
-Le dossier `dist` est statique et peut être hébergé indépendamment. Le code source est conservé dans le dépôt GitHub privé `NCSclub/arena-26`. Le déploiement Vercel utilise `vercel.json` pour publier uniquement le dossier `dist`, sans serveur Node ni étape de compilation. Le projet Vercel est relié au dépôt privé et à sa branche `main`.
-
-Le fond ASCII et sa simulation fluide sont partagés entre les sections sombres ; les anciens tracés de circuits et ondes circulaires ont été retirés du rendu. La section de présentation utilise une grille à deux colonnes, un corps de texte de 19 à 21 px sur grand écran et de 17 px sur mobile. Les transitions de la présentation et du pied de page occupent une zone large et sont redessinées en continu sur canvas. Leurs pixels restent carrés, avec une dissolution animée sans étirement. Les lignes du programme se décalent de 10 px au survol ou au focus clavier, avec ombre et accent lumineux.
-
-La sculpture accepte un glisser à la souris ou au toucher, avec inertie au relâchement. Après cinq secondes sans action, un ressort amorti la ramène progressivement à son orientation de repos, sans saut et par le chemin angulaire le plus court. Les flèches permettent la rotation au clavier ; Début ou un double-clic déclenche le même retour progressif. Le clic et le glisser ne donnent plus le focus au canvas, afin de supprimer le cadre bleu à la souris ; le repère de focus reste disponible au clavier. La sculpture alterne entre le logo ARENA et le symbole `</>` : chaque forme reste lisible pendant quatre secondes, puis les points se transforment pendant deux secondes. La rotation et le morphing gardent leur état pendant le glisser. Les fonctions de retour et de morphing sont dans `dist/sculpture-motion.js` et leurs tests couvrent le retour progressif à plusieurs cadences et la continuité du cycle. Le pointeur et les gestes de glisser alimentent le même champ fluide sans remettre son horloge à zéro. La grille du contenu réserve une zone distincte au décor animé. Une vérification de non-régression garantit que le motif évolue sans interaction et maintient le côté du texte en blanc.
-
-Les textes anglais et français sont centralisés dans `dist/translations.js`. `dist/i18n.js` met à jour les nœuds de texte et les attributs accessibles sans recréer les champs ni les canvas. Les messages de validation, le récapitulatif, les contrôles d’animation et le titre de la page suivent la langue sélectionnée. Le HTML initial est en anglais, y compris sans JavaScript ; la préférence explicite est enregistrée sous `arena-language` dans `localStorage`, avec repli sur l’anglais si le stockage est indisponible.
-
-La FAQ conserve sa typographie, sa grille et ses espacements d’origine. Un dégradé noir discret derrière la section protège la lisibilité du texte sans ajouter de carte ni de nouvelle bordure.
-
-Le hero utilise `dist/countdown.js` pour afficher les jours, heures, minutes et secondes en caractères ASCII sur une surface claire. Les chiffres se décodent progressivement à chaque changement. Le calcul utilise l’échéance absolue et se resynchronise après le retour sur l’onglet ; les animations respectent le bouton de pause et la visibilité. Les libellés suivent la langue choisie et le compteur possède une description accessible sans annonces vocales répétées chaque seconde. Les tests couvrent les unités, le fuseau, une échéance passée et une date manquante ou invalide.
-
-Le champ ASCII réduit progressivement la densité et la luminosité des formations dans la bande centrale avant le choix des glyphes, y compris pendant le sillage du pointeur. Cela limite les grandes masses de lettres claires derrière le hero sans ajouter de découpe noire ; le voile du contenu utilise des paliers plus doux. Les chiffres du compte à rebours utilisent des silhouettes pixelisées pleines, avec une gravure ASCII discrète et la même transition de décodage turquoise.
+Ne pousser sur GitHub que sur instruction de Fadi. Les tests couvrent les animations, les libellés anglais, le formulaire conditionnel, le compte à rebours, la validation serveur, l’échéance, les limites HTTP, les sessions, la déconnexion, les origines, le contrôle des accès et la protection CSV. Les essais de bout en bout utilisent uniquement des inscriptions fictives supprimées après vérification.

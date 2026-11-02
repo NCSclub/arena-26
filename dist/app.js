@@ -1,12 +1,15 @@
-import { initCountdown } from "./countdown.js?v=solid-digits";
+import { REGISTRATION_CLOSES_AT } from "./event-config.js";
+import { initCountdown } from "./countdown.js?v=registrations";
 import { registrationPayload } from "./registration-data.js";
-import { motionOff } from "./visuals.js?v=hero-contrast";
-import { language, t } from "./i18n.js";
+import { motionOff } from "./visuals.js?v=registrations";
+import { t } from "./i18n.js";
 const $ = (selector) => document.querySelector(selector);
 history.scrollRestoration = "manual";
 
 let currentStep = 0;
 let statusKey = "";
+let submissionId = crypto.randomUUID();
+let submitting = false;
 const form = $("#registration-form");
 form.noValidate = true;
 function conditionalFields() {
@@ -34,6 +37,7 @@ function conditionalFields() {
 }
 form.addEventListener("change", conditionalFields);
 form.addEventListener("input", (event) => {
+  submissionId = crypto.randomUUID();
   if (event.target.setCustomValidity) event.target.setCustomValidity("");
   $("#form-status").textContent = "";
   statusKey = "";
@@ -136,11 +140,11 @@ function renderReview() {
 function updateFormCopy() {
   $("#form-progress").textContent = `${t("step")} 0${currentStep + 1} / 03`;
   $("#next-step").replaceChildren(
-    document.createTextNode(t(currentStep === 2 ? "export" : "continue") + " "),
+    document.createTextNode(t(currentStep === 2 ? "submit" : "continue") + " "),
   );
   const arrow = document.createElement("span");
   arrow.setAttribute("aria-hidden", "true");
-  arrow.textContent = currentStep === 2 ? "↓" : "→";
+  arrow.textContent = "→";
   $("#next-step").append(arrow);
   $("#form-status").textContent = statusKey ? t(statusKey) : "";
   if (currentStep === 2) renderReview();
@@ -173,7 +177,8 @@ function showStep(index, focus = true) {
 $("#previous-step").addEventListener("click", () =>
   showStep(Math.max(0, currentStep - 1)),
 );
-form.addEventListener("submit", (event) => {
+form.addEventListener("submit", async (event) => {
+  if (submitting) { event.preventDefault(); return; }
   event.preventDefault();
   if (currentStep < 2) {
     if (validStep(currentStep)) showStep(currentStep + 1);
@@ -184,20 +189,36 @@ form.addEventListener("submit", (event) => {
     if (!validStep(index)) return;
   }
   showStep(2, false);
-  const blob = new Blob([JSON.stringify(payload(), null, 2)], {
-    type: "application/json",
-  });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download =
-    language === "fr"
-      ? "arena-26-mes-reponses.json"
-      : "arena-26-my-answers.json";
-  anchor.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-  statusKey = "exported";
-  $("#form-status").textContent = t(statusKey);
+  submitting = true;
+  const button = $("#next-step");
+  button.disabled = true;
+  $("#previous-step").disabled = true;
+  button.textContent = t("submitting");
+  $("#form-status").textContent = "";
+  try {
+    const response = await fetch("/api/registrations", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...payload(), submissionId, website: form.elements.website.value }),
+      signal: AbortSignal.timeout(20000),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      const keys = { 409: "duplicate", 410: "closed", 429: "rateLimited" };
+      statusKey = keys[response.status] || "submitFailed";
+      $("#form-status").textContent = keys[response.status] ? t(statusKey) : result.error || t(statusKey);
+      return;
+    }
+    const success = document.createElement("section");
+    success.className = "registration-success";
+    success.tabIndex = -1;
+    const heading = document.createElement("h2");heading.textContent = "YOU’RE ON THE LIST.";
+    const message = document.createElement("p");message.textContent = "The NCS organizing team has received your registration.";
+    const reference = document.createElement("p");reference.textContent = "Keep your reference: " + result.id;
+    const home = document.createElement("a");home.href = "/";home.className = "button primary";home.textContent = "Back to ARENA →";
+    success.append(heading, message, reference, home);form.after(success);form.hidden = true;success.focus();
+  } catch { $("#form-status").textContent = t("submitFailed"); }
+  finally { submitting = false;button.disabled = false;$("#previous-step").disabled = false;button.textContent = t("submit") + " →"; }
+
 });
 function updateTitle() {
   document.title =
@@ -233,4 +254,6 @@ conditionalFields();
 showStep(0, false);
 route();
 
-initCountdown(document.querySelector(".event-countdown"));
+const countdown = document.querySelector(".event-countdown");
+countdown.dataset.eventStart = REGISTRATION_CLOSES_AT;
+initCountdown(countdown);

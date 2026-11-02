@@ -10,16 +10,15 @@
       data-i18n-content="description"
     />
     <title>ARENA 26 — Think fast. Gain more.</title>
-    <link rel="icon" href="assets/arena-logo.png" />
+    <link rel="icon" href="assets/arena-symbol.svg" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     />
-    <link rel="stylesheet" href="style.css?v=hero-contrast" />
-    <script type="module" src="app.js?v=hero-contrast"></script>
+    <link rel="stylesheet" href="style.css?v=registrations" />
+    <script type="module" src="app.js?v=registrations"></script>
   </head>
   <body>
-    <svg class="logo-filter" aria-hidden="true"><defs><filter id="transparent-logo" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  3 3 3 0 -0.4"/></filter></defs></svg>
     <canvas class="ascii-bg site-ascii" data-ascii="background" aria-hidden="true"></canvas>
     <a class="skip-link" href="#main" data-i18n="skip">Skip to content</a>
     <header class="header wrap">
@@ -29,11 +28,11 @@
         aria-label="ARENA 26, home"
         data-i18n-aria-label="homeLabel"
         ><img
-          src="assets/arena-logo-2.png"
+          src="assets/arena-symbol.svg"
           width="42"
           height="42"
           alt=""
-        /><span>ARENA<span class="edition">/26</span></span></a
+        /><span>ARENA</span></a
       >
       <nav aria-label="Main navigation" data-i18n-aria-label="navLabel">
         <a href="#about" data-i18n="navChallenge">The challenge</a
@@ -41,31 +40,6 @@
         ><a href="#faq" data-i18n="navInfo">Event info</a>
       </nav>
       <div class="header-actions">
-        <div
-          class="language-switch mono"
-          role="group"
-          aria-label="Website language"
-          data-i18n-aria-label="languageLabel"
-        >
-          <button
-            type="button"
-            data-language="en"
-            lang="en"
-            aria-label="English"
-            aria-pressed="true"
-          >
-            EN</button
-          ><span aria-hidden="true">/</span
-          ><button
-            type="button"
-            data-language="fr"
-            lang="fr"
-            aria-label="Français"
-            aria-pressed="false"
-          >
-            FR
-          </button>
-        </div>
         <a
           href="#inscription"
           class="button button-small outline"
@@ -89,7 +63,7 @@
           <div class="hero-content">
             <img
               class="hero-lockup"
-              src="assets/arena-lockup.png"
+              src="assets/arena-brand.svg"
               width="196"
               height="265"
               alt="ARENA challenge"
@@ -101,7 +75,7 @@
             <p class="hero-description" data-i18n="heroDescription">
               Code is your playing field. Time is your opponent.
             </p>
-            <div class="event-countdown" data-event-start="2027-01-09T18:20:58+01:00" data-event-zone="Africa/Algiers" data-event-provisional="true">
+            <div class="event-countdown" data-event-start="2026-11-09T17:00:00+01:00" data-event-zone="Africa/Algiers">
               <div class="countdown-topline mono">
                 <span data-i18n="nextChallenge">THE NEXT CHALLENGE IS COMING</span>
                 <span class="countdown-indicator" data-countdown-status>AWAITING DATE</span>
@@ -396,15 +370,8 @@
               <span id="step-counter">PLAYER_SETUP / 01</span
               ><span data-i18n="edition">EDITION 2026</span>
             </div>
-            <div class="preview-notice">
-              <span aria-hidden="true">◈</span>
-              <p data-i18n="previewBody">
-                <strong data-i18n="previewTitle">Form preview</strong>You can
-                complete and export your answers. Registration will be sent to
-                the organisers once the service is connected.
-              </p>
-            </div>
             <form id="registration-form">
+              <div class="registration-trap" aria-hidden="true"><label>Leave this empty<input name="website" tabindex="-1" autocomplete="off" /></label></div>
               <div class="form-step" data-step="0">
                 <h2 data-i18n="profileTitle">
                   LET’S GET <em data-i18n="profileTitleEnd">TO KNOW YOU.</em>
@@ -603,12 +570,11 @@
                   READY FOR <em data-i18n="reviewTitleEnd">WHAT’S NEXT?</em>
                 </h2>
                 <p class="form-intro" data-i18n="reviewIntro">
-                  Check your answers before exporting them.
+                  Check your answers before sending your registration.
                 </p>
                 <div id="review"></div>
                 <p class="export-note" data-i18n="exportNote">
-                  Exporting downloads your answers to this device. It does not
-                  register you, and no data is sent.
+                  Your details are sent securely to the NCS organizing team to manage your registration and event transport.
                 </p>
               </div>
               <div class="form-actions">
@@ -638,8 +604,8 @@
     </main>
     <footer id="footer" class="footer wrap">
       <a href="#" class="brand"
-        ><img src="assets/arena-logo.png" width="34" height="34" alt="" /><span
-          >ARENA<span class="edition">/26</span></span
+        ><img src="assets/arena-symbol.svg" width="34" height="34" alt="" /><span
+          >ARENA</span
         ></a
       >
       <div class="footer-socials">
@@ -685,14 +651,5 @@
         Computer Society</span
       >
     </footer>
-    <button
-      id="motion-toggle"
-      class="motion-toggle mono"
-      type="button"
-      aria-pressed="false"
-      aria-label="Pause animations"
-    >
-      Ⅱ <span>ANIMATIONS</span>
-    </button>
   </body>
 </html>

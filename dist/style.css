@@ -2454,3 +2454,8 @@ body { isolation: isolate; background: #000; }
   .countdown-unit > span { font-size: 7px; letter-spacing: .8px; }
   .countdown-caption { font-size: 7px; }
 }
+
+.hero-lockup, .brand img { filter: none; }
+.registration-trap { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.form-actions button:disabled { opacity: .6; cursor: wait; }
+.registration-success { border: 1px solid var(--teal); background: #002e28; color: #fff; padding: 28px; margin-top: 24px; line-height: 1.8; }

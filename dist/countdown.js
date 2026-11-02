@@ -87,11 +87,10 @@ export function initCountdown(element) {
     }
     const status = !remaining ? 'countdownPending' : remaining.total ? 'countdownRunning' : 'countdownLive';
     element.querySelector('[data-countdown-status]').textContent = t(status);
-    const provisional = element.dataset.eventProvisional === 'true';
     const readable = !remaining ? t('countdownDateSoon') : keys.map((key, index) => `${remaining[key]} ${t(labels[index]).toLowerCase()}`).join(', ');
     face.setAttribute('aria-label', readable);
     element.querySelector('[data-countdown-readable]').textContent = readable;
-    element.querySelector('[data-countdown-caption]').textContent = !remaining ? t('countdownDateSoon') : (provisional ? `${t('countdownProvisional')} · ` : '') + new Intl.DateTimeFormat(language === 'fr' ? 'fr-DZ' : 'en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZoneName: 'short', timeZone: element.dataset.eventZone || 'Africa/Algiers' }).format(new Date(start));
+    element.querySelector('[data-countdown-caption]').textContent = !remaining ? t('countdownDateSoon') : new Intl.DateTimeFormat(language === 'fr' ? 'fr-DZ' : 'en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZoneName: 'short', timeZone: element.dataset.eventZone || 'Africa/Algiers' }).format(new Date(start));
     paint();
     timer = setTimeout(tick, 1000 - Date.now() % 1000 + 10);
   }

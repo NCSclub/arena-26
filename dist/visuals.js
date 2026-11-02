@@ -3,8 +3,8 @@ import { isWhitePixel } from "./pixel-transition.js";
 import { t } from "./i18n.js";
 import { advanceOrbit, beginOrbitReturn, morphFrame } from "./sculpture-motion.js";
 const $ = (selector) => document.querySelector(selector);
-export let motionOff = sessionStorage.getItem("arena-motion") === "off";
-let logoPaused = false;
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+export let motionOff = reducedMotion.matches;
 const engines = [];
 
 for (const selector of [".about", ".footer"]) {
@@ -51,8 +51,7 @@ function engine(canvas, render) {
     if (
       visible &&
       !motionOff &&
-      !document.hidden &&
-      !(canvas.id === "logo-ascii" && logoPaused)
+      !document.hidden
     )
       frame = requestAnimationFrame(paint);
   }
@@ -89,7 +88,7 @@ try {
 }
 
 const image = new Image();
-image.src = "assets/arena-logo.png";
+image.src = "assets/arena-brand.png";
 const mask = document.createElement("canvas");
 mask.width = mask.height = 90;
 const mc = mask.getContext("2d", { willReadFrequently: true });
@@ -158,7 +157,7 @@ function resetOrbit() {
   clearTimeout(orbitResetTimer);
   orbitResetTimer = null;
   beginOrbitReturn(orbit);
-  if (motionOff || logoPaused) {
+  if (motionOff) {
     orbit.yaw = orbit.pitch = orbit.vx = orbit.vy = 0;
     orbit.returning = false;
   }
@@ -198,7 +197,7 @@ function buildShapes() {
   shapes.length = 0;
   for (let kind = 0; kind < 2; kind++) {
     mc.clearRect(0, 0, 90, 90);
-    if (kind === 0) mc.drawImage(image, 5, 5, 80, 80);
+    if (kind === 0) mc.drawImage(image, 280, 92, 290, 295, 5, 5, 80, 80);
     else {
       mc.fillStyle = "#fff";
       mc.font = "bold 48px monospace";
@@ -230,17 +229,13 @@ function updateSculptureCopy() {
     morphState
   ];
   sculptureCanvas.setAttribute("aria-label", t("sculptureHelp"));
-  $("#morph-pause")?.setAttribute(
-    "aria-label",
-    t(logoPaused ? "resumeLogo" : "pauseLogo"),
-  );
 }
 const redrawLogo = engine($("#logo-ascii"), (ctx, w, h, now) => {
   if (!shapes.length) return;
   const dt = previous ? Math.min(0.05, now - previous) : 0;
-  if (previous && !motionOff && !logoPaused && orbit.pointer === null)
+  if (previous && !motionOff && orbit.pointer === null)
     elapsed += dt;
-  if (orbit.pointer === null && !motionOff && !logoPaused) {
+  if (orbit.pointer === null && !motionOff) {
     advanceOrbit(orbit, dt);
   }
   previous = now;
@@ -304,39 +299,10 @@ if (image.complete && image.naturalWidth) {
   buildShapes();
   redrawLogo();
 }
-$("#morph-pause")?.addEventListener("click", (event) => {
-  logoPaused = !logoPaused;
-  previous = 0;
-  event.currentTarget.textContent = logoPaused ? "▷" : "Ⅱ";
-  event.currentTarget.setAttribute("aria-pressed", String(logoPaused));
-  event.currentTarget.setAttribute(
-    "aria-label",
-    t(logoPaused ? "resumeLogo" : "pauseLogo"),
-  );
-  redrawLogo();
-});
-function updateMotionCopy() {
-  const toggle = $("#motion-toggle");
-  toggle.setAttribute("aria-pressed", String(motionOff));
-  toggle.setAttribute(
-    "aria-label",
-    t(motionOff ? "enableMotion" : "disableMotion"),
-  );
-  toggle.innerHTML = `${motionOff ? "▷" : "Ⅱ"} <span>${t(motionOff ? "resume" : "pause")}</span>`;
-}
 function updateMotion() {
   document.body.classList.toggle("no-motion", motionOff);
-  updateMotionCopy();
   previous = 0;
-  engines.forEach((refresh) => refresh());
+  engines.forEach(refresh => refresh());
 }
-$("#motion-toggle").addEventListener("click", () => {
-  motionOff = !motionOff;
-  sessionStorage.setItem("arena-motion", motionOff ? "off" : "on");
-  updateMotion();
-});
+reducedMotion.addEventListener("change", event => { motionOff = event.matches; updateMotion(); });
 updateMotion();
-document.addEventListener("languagechange", () => {
-  updateSculptureCopy();
-  updateMotionCopy();
-});

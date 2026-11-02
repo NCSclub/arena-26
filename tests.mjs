@@ -41,13 +41,13 @@ test('Sculpture holds each symbol and morphs continuously in both directions', (
   }
 });
 
-test('New visitors use English; only an explicit French preference selects French', () => {
+test('English is used even when a visitor previously selected French', () => {
   for (const saved of [null, undefined, '', 'en', 'de', 'fr-FR']) assert.equal(resolveLanguage(saved), 'en');
-  assert.equal(resolveLanguage('fr'), 'fr');
+  assert.equal(resolveLanguage('fr'), 'en');
 });
 
-test('Both languages cover every static and dynamic translation used by the site', async () => {
-  assert.deepEqual(Object.keys(translations.en).sort(), Object.keys(translations.fr).sort());
+test('English covers every static and dynamic label used by the site', async () => {
+  assert.deepEqual(Object.keys(translations), ['en']);
   const html = await readFile(new URL('./dist/index.html', import.meta.url), 'utf8');
   const keys = [...html.matchAll(/data-i18n(?:-(?:aria-label|placeholder|content))?="([^"]*)"/g)]
     .flatMap(match => match[1].split(',')).filter(Boolean);
@@ -57,7 +57,6 @@ test('Both languages cover every static and dynamic translation used by the site
   }
   for (const key of keys) {
     assert.equal(typeof translations.en[key], 'string', `Missing English: ${key}`);
-    assert.equal(typeof translations.fr[key], 'string', `Missing French: ${key}`);
   }
   assert.match(html, /<html lang="en">/);
 });
@@ -83,7 +82,7 @@ test('Repeated background clicks preserve earlier ripple origins and start times
   assert.equal(ripples.length, 8);
 });
 
-test('Solo export omits stale team and transport answers after changing choices', () => {
+test('Solo payload omits stale team and transport answers after changing choices', () => {
   const data = registrationPayload({ fullName: '  Test Participant  ', hasTeam: 'no', teamName: 'Previous team', teammate1: 'Previous teammate', needsTransportation: 'no', transportationAddress: 'Previous address' });
   assert.equal(data.fullName, 'Test Participant');
   assert.equal(data.hasTeam, false);
@@ -91,7 +90,7 @@ test('Solo export omits stale team and transport answers after changing choices'
   assert.deepEqual(data.teammates, []);
   assert.equal(data.transportationAddress, '');
 });
-test('Team export preserves populated teammates and requested transport', () => {
+test('Team payload preserves populated teammates and requested transport', () => {
   const data = registrationPayload({ hasTeam: 'yes', teamName: '  Team 26 ', teammate1: ' Alice ', teammate2: ' ', teammate3: 'Bob', needsTransportation: 'yes', transportationAddress: ' Algiers ' });
   assert.equal(data.teamName, 'Team 26');
   assert.deepEqual(data.teammates, ['Alice', 'Bob']);
