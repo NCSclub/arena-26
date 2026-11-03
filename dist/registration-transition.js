@@ -1,27 +1,25 @@
-export function initRegistrationTransition() {
+export function initRegistrationTransition(renderRoute) {
   let active = null;
+  let renderedHash = location.hash;
 
-  document.addEventListener("click", (event) => {
-    const link = event.target.closest('a[href="#inscription"]');
-    if (!link || event.defaultPrevented || event.button !== 0 ||
-        event.metaKey || event.ctrlKey || event.shiftKey || event.altKey ||
-        link.hasAttribute("download") || link.target === "_blank" ||
-        location.hash === "#inscription") return;
-    event.preventDefault();
-    if (active) return;
+  function applyRoute() {
+    renderRoute();
+    renderedHash = location.hash;
+  }
 
+  function start() {
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
-    if (!context) { location.hash = "inscription"; return; }
+    if (!context) { applyRoute(); return; }
     canvas.className = "registration-waterfall";
     canvas.setAttribute("aria-hidden", "true");
     canvas.dataset.phase = "cover";
+    canvas.dataset.direction = location.hash === "#inscription" ? "enter" : "exit";
     document.body.append(canvas);
 
     const root = document.documentElement;
     const previousOverflow = root.style.overflow;
     root.style.overflow = "hidden";
-    const initialHash = location.hash;
     let navigated = false;
     let frame;
     let cells = [];
@@ -56,7 +54,7 @@ export function initRegistrationTransition() {
     function navigate() {
       if (navigated) return;
       navigated = true;
-      location.hash = "inscription";
+      applyRoute();
     }
 
     function finish() {
@@ -64,14 +62,9 @@ export function initRegistrationTransition() {
       canvas.remove();
       root.style.overflow = previousOverflow;
       window.removeEventListener("resize", resize);
-      window.removeEventListener("hashchange", onHashChange);
       window.removeEventListener("pagehide", finish);
       document.removeEventListener("visibilitychange", onVisibilityChange);
       active = null;
-    }
-
-    function onHashChange() {
-      if (location.hash !== (navigated ? "#inscription" : initialHash)) finish();
     }
 
     function onVisibilityChange() {
@@ -80,7 +73,7 @@ export function initRegistrationTransition() {
 
     function draw(now) {
       started ??= now;
-      const elapsed = now - started;
+      const elapsed = (now - started) * 1.18;
       context.clearRect(0, 0, canvas.width, canvas.height);
       context.fillStyle = "#fff";
       if (elapsed >= coverAt) navigate();
@@ -97,12 +90,31 @@ export function initRegistrationTransition() {
       frame = requestAnimationFrame(draw);
     }
 
-    active = canvas;
+    active = { finish };
     resize();
     window.addEventListener("resize", resize);
-    window.addEventListener("hashchange", onHashChange);
     window.addEventListener("pagehide", finish);
     document.addEventListener("visibilitychange", onVisibilityChange);
     frame = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener("hashchange", () => {
+    active?.finish();
+    const crossingRegistration = (renderedHash === "#inscription") !== (location.hash === "#inscription");
+    if (crossingRegistration && !document.hidden) start();
+    else applyRoute();
+  });
+
+  document.addEventListener("click", (event) => {
+    const link = event.target.closest("a[href]");
+    if (!link || event.defaultPrevented || event.button !== 0 ||
+        event.metaKey || event.ctrlKey || event.shiftKey || event.altKey ||
+        link.hasAttribute("download") || (link.target && link.target !== "_self") ||
+        link.getAttribute("href").startsWith("#")) return;
+    const destination = new URL(link.href);
+    if (destination.origin !== location.origin || destination.pathname !== location.pathname ||
+        destination.search !== location.search || location.hash !== "#inscription") return;
+    event.preventDefault();
+    location.hash = destination.hash || "#";
   });
 }

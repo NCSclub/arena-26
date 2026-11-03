@@ -243,8 +243,7 @@ function route() {
     );
   else scrollTo({ top: 0, behavior: "instant" });
 }
-window.addEventListener("hashchange", route);
-initRegistrationTransition();
+initRegistrationTransition(route);
 document.addEventListener("languagechange", () => {
   updateTitle();
   updateFormCopy();
