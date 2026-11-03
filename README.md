@@ -69,3 +69,18 @@ npx vercel@50.28.0 promote URL_DU_DEPLOIEMENT --scope team_4RJFOPhu7qwUTVZXv8Hp2
 ```
 
 Ne pousser sur GitHub que sur instruction de Fadi. Les tests couvrent les animations, les libellés anglais, le formulaire conditionnel, le compte à rebours, la validation serveur, l’échéance, les limites HTTP, les sessions, la déconnexion, les origines, le contrôle des accès et la protection CSV. Les essais de bout en bout utilisent uniquement des inscriptions fictives supprimées après vérification.
+
+## Programme confirmé
+
+Horaires algériens, d’après la capture transmise par Fadi le 3 novembre 2026 :
+
+| Heure | Activité |
+| --- | --- |
+| 08:30 | CHECK-IN |
+| 08:45 | OPENING CEREMONY AND REVEALING FIRST CHALLENGE |
+| 09:00 | CODING |
+| 12:00 | LUNCH BREAK |
+| 12:45 | REVEALING SECOND CHALLENGE |
+| 13:00 | CODING |
+| 15:30 | FUN ACTIVITIES |
+| 18:00 | CLOSING CEREMONY AND WINNERS ANNOUNCEMENT |
