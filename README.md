@@ -86,3 +86,7 @@ Horaires algériens, d’après la capture transmise par Fadi le 3 novembre 2026
 | 18:00 | CLOSING CEREMONY AND WINNERS ANNOUNCEMENT |
 
 La vue d’inscription atténue le fond ASCII derrière le contenu avec un voile sombre progressif. Le panneau du formulaire est opaque ; les textes secondaires, libellés, espaces réservés et réponses du récapitulatif sont plus contrastés et plus grands, sans changer les polices ni la grille.
+
+### Aperçu local — cascade de pixels
+
+La branche `codex/registration-waterfall-preview` ajoute une transition de 1,58 seconde sur les liens d’inscription : des carrés blancs descendent en colonnes irrégulières, couvrent l’écran pendant le changement de vue, puis découvrent le formulaire. L’accès direct à `#inscription`, le retour du navigateur et les réponses déjà saisies sont conservés. Le canvas temporaire est retiré à la fin ou lors d’une navigation interrompue. Cet aperçu reste local, en attente de validation avant publication.

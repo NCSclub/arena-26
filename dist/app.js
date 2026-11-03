@@ -3,6 +3,7 @@ import { initCountdown } from "./countdown.js?v=registrations";
 import { registrationPayload } from "./registration-data.js";
 import { motionOff } from "./visuals.js?v=background-autoplay";
 import { t } from "./i18n.js";
+import { initRegistrationTransition } from "./registration-transition.js";
 const $ = (selector) => document.querySelector(selector);
 history.scrollRestoration = "manual";
 
@@ -243,6 +244,7 @@ function route() {
   else scrollTo({ top: 0, behavior: "instant" });
 }
 window.addEventListener("hashchange", route);
+initRegistrationTransition();
 document.addEventListener("languagechange", () => {
   updateTitle();
   updateFormCopy();
