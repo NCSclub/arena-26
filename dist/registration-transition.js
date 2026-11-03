@@ -73,7 +73,7 @@ export function initRegistrationTransition(renderRoute) {
 
     function draw(now) {
       started ??= now;
-      const elapsed = (now - started) * 1.18;
+      const elapsed = (now - started) * 1.3;
       context.clearRect(0, 0, canvas.width, canvas.height);
       context.fillStyle = "#fff";
       if (elapsed >= coverAt) navigate();
