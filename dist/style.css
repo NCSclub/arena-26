@@ -2459,3 +2459,38 @@ body { isolation: isolate; background: #000; }
 .registration-trap { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .form-actions button:disabled { opacity: .6; cursor: wait; }
 .registration-success { border: 1px solid var(--teal); background: #002e28; color: #fff; padding: 28px; margin-top: 24px; line-height: 1.8; }
+
+.registration::before {
+  content: "";
+  position: absolute;
+  inset: 0 -60px;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(90deg, #000f 0%, #000e 34%, #0009 65%, #0004 100%);
+  mask-image: linear-gradient(transparent, #000 40px, #000 calc(100% - 40px), transparent);
+}
+.registration .back-link, .registration .eyebrow { color: #c7d4ce; font-size: 10px; }
+.registration aside > p { color: #d0dad4; font-size: 15px; line-height: 1.8; }
+.registration .steps li { color: #b6c6bd; font-size: 13px; }
+.registration .steps li.active { color: #fff; }
+.registration .registration-side-note { color: #c3d3c9; }
+.registration .registration-side-note > span { color: #a5b9ad; font-size: 9px; }
+.registration .form-panel { background: #101512; }
+.registration .form-panel-top { color: #bbc9c0; font-size: 9px; }
+.registration .form-intro, .registration .export-note { color: #bdccc3; font-size: 13px; }
+.registration .fields label, .registration .expectations, .registration .field-label, .registration .radio-inline { color: #e1e9e4; font-size: 13px; }
+.registration legend { font-size: 11px; }
+.registration legend > span { color: #aabdab; }
+.registration input:not([type="radio"]), .registration select, .registration textarea { font-size: 14px; min-height: 48px; border-color: #586e60; }
+.registration input::placeholder, .registration textarea::placeholder { color: #a5b6ad; font-size: 13px; opacity: 1; }
+.registration .radio-cards strong { color: #eef4ef; font-size: 14px; }
+.registration .radio-cards small { color: #b7c8bd; font-size: 12px; }
+.registration .review-row { font-size: 13px; }
+.registration .review-row dt { color: #b8c9bd; }
+.registration .review-row dd { color: #f0f5ef; }
+.registration .form-actions .mono { color: #b6c8bb; font-size: 10px; }
+@media (max-width: 700px) {
+  .registration::before { inset-inline: -20px; background: #000d; }
+  .registration .steps li { font-size: 11px; }
+  .registration input:not([type="radio"]), .registration select, .registration textarea { font-size: 16px; }
+}

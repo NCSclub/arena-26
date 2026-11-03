@@ -84,3 +84,5 @@ Horaires algériens, d’après la capture transmise par Fadi le 3 novembre 2026
 | 13:00 | CODING |
 | 15:30 | FUN ACTIVITIES |
 | 18:00 | CLOSING CEREMONY AND WINNERS ANNOUNCEMENT |
+
+La vue d’inscription atténue le fond ASCII derrière le contenu avec un voile sombre progressif. Le panneau du formulaire est opaque ; les textes secondaires, libellés, espaces réservés et réponses du récapitulatif sont plus contrastés et plus grands, sans changer les polices ni la grille.
