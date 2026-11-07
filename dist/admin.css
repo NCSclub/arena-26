@@ -30,3 +30,9 @@
 .member-filters label { flex: 1 1 145px; margin: 0; }
 .member-filters select { display: block; width: 100%; min-width: 0; margin-top: 4px; padding: 9px; border: 1px solid #405149; background: #101814; color: #fff; font: inherit; }
 .member-filters input[type="search"] { margin: 4px 0 0; padding: 9px; }
+#teammate-fields { border: 1px solid var(--line); margin: 0 0 18px; padding: 12px; }
+
+.member-form-footer { position: sticky; bottom: 0; background: #0b130e; padding-block: 8px; }
+.member-form-footer .actions { margin-top: 0; }
+#member-save-status { margin: 0 0 8px; color: #f9c594; }
+#member-save-status:empty { display: none; }

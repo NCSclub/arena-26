@@ -31,7 +31,10 @@
       <p id="empty-state" class="empty-state" hidden>No registrations yet. New players will appear here after submitting the form.</p>
       <div class="pagination"><button id="previous-page" class="button secondary">← Previous</button><span id="page-info" class="mono"></span><button id="next-page" class="button secondary">Next →</button></div>
       <section class="teams-section" aria-labelledby="teams-title">
-        <h2 id="teams-title">Teams</h2>
+        <div class="detail-heading">
+          <h2 id="teams-title">Teams</h2>
+          <button id="add-team" class="button">+ New team</button>
+        </div>
         <div class="member-filters">
           <label>Team name<select id="roster-team"><option value="">All teams</option></select></label>
           <label>Find a team or member<input id="roster-search" type="search" placeholder="Team, member, or listed teammate" autocomplete="off" /></label>
@@ -52,7 +55,10 @@
     <form id="member-form" hidden>
       <div id="edit-fields"></div>
       <datalist id="team-options"></datalist>
-      <div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" id="cancel-edit" type="button">Cancel</button></div>
+      <div class="member-form-footer">
+        <p id="member-save-status" role="status" aria-live="polite"></p>
+        <div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" id="cancel-edit" type="button">Cancel</button></div>
+      </div>
     </form>
   </dialog>
 </body>

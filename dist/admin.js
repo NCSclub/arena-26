@@ -59,40 +59,64 @@ const fieldLimits = { fullName: 120, email: 160, phoneNumber: 24, discordTag: 80
 
 const teamFields = ['hasTeam', 'teamName', 'teammates'];
 
-function showMemberForm(record, teamOnly = false) {
+function showMemberForm(record, teamOnly = false, newTeam = false) {
   selectedMember = record;
-  $('#detail-title').textContent = record ? teamOnly ? `Edit team · ${record.fullName}` : `Edit · ${record.fullName}` : 'New member';
-  $('#detail-status').textContent = '';
+  $('#member-save-status').textContent = '';
+  $('#detail-title').textContent = record ? teamOnly ? `Edit team · ${record.fullName}` : `Edit · ${record.fullName}` : newTeam ? 'New team' : 'New member';
+  $('#detail-status').textContent = record ? '' : newTeam
+    ? 'Enter the team name, plus the first member’s name and email.'
+    : 'Only name and email are required to add a solo member.';
   const fields = Object.entries(labels).filter(([key]) => teamOnly ? teamFields.includes(key) : !['id', 'createdAt'].includes(key));
   $('#edit-fields').replaceChildren(...fields.map(([key, title]) => {
+    if (key === 'teammates') {
+      const group = document.createElement('fieldset');
+      group.id = 'teammate-fields';
+      const legend = document.createElement('legend');
+      legend.textContent = 'Teammates (optional)';
+      group.append(legend);
+      for (let index = 0; index < 3; index++) {
+        const label = document.createElement('label');
+        label.textContent = `Teammate ${index + 1}`;
+        const input = document.createElement('input');
+        input.name = 'teammate';
+        input.maxLength = 120;
+        input.value = record?.teammates?.[index] ?? '';
+        label.append(input);
+        group.append(label);
+      }
+      return group;
+    }
     const label = document.createElement('label');
     const value = record?.[key];
     const control = document.createElement(key === 'yearOfStudy' ? 'select' :
-      ['teammates', 'expectations'].includes(key) ? 'textarea' : 'input');
+      key === 'expectations' ? 'textarea' : 'input');
     control.name = key;
-    label.textContent = key === 'teammates' ? 'Teammates (one per line, up to three)' : title;
+    label.textContent = title;
     if (key === 'yearOfStudy') {
       control.append(new Option('Select a year', ''), ...['L1', 'L2', 'L3', 'M1'].map(year => new Option(year, year)));
     }
     if (['hasTeam', 'needsTransportation'].includes(key)) {
       control.type = 'checkbox';
-      control.checked = Boolean(value);
+      control.checked = Boolean(value || (newTeam && key === 'hasTeam'));
+      control.disabled = newTeam && key === 'hasTeam';
       label.prepend(control);
     } else {
       if (key === 'email') control.type = 'email';
       if (key === 'phoneNumber') control.type = 'tel';
       if (key === 'teamName') control.setAttribute('list', 'team-options');
+      control.required = ['fullName', 'email', 'teamName', 'transportationAddress'].includes(key);
       if (fieldLimits[key]) control.maxLength = fieldLimits[key];
-      control.value = Array.isArray(value) ? value.join('\n') : value ?? '';
+      control.value = value ?? '';
       label.append(control);
     }
     return label;
   }));
   const form = $('#member-form');
   const updateFields = () => {
+    const teammates = $('#teammate-fields');
+    teammates.hidden = teammates.disabled = !form.elements.hasTeam.checked;
     for (const [name, enabled] of Object.entries({
       teamName: form.elements.hasTeam.checked,
-      teammates: form.elements.hasTeam.checked,
       transportationAddress: form.elements.needsTransportation?.checked,
     })) {
       const field = form.elements[name];
@@ -105,12 +129,14 @@ function showMemberForm(record, teamOnly = false) {
   if (form.elements.needsTransportation) form.elements.needsTransportation.onchange = updateFields;
   updateFields();
   toggleEdit(true);
-  form.querySelector('[type="submit"]').textContent = record ? 'Save changes' : 'Add member';
+  form.querySelector('[type="submit"]').textContent = record ? 'Save changes' : newTeam ? 'Create team' : 'Add member';
   if (!$('#registration-detail').open) $('#registration-detail').showModal();
   (form.elements.fullName || form.elements.hasTeam).focus();
+  $('#registration-detail').scrollTop = 0;
 }
 
 $('#add-member').addEventListener('click', () => showMemberForm());
+$('#add-team').addEventListener('click', () => showMemberForm(undefined, false, true));
 $('#edit-member').addEventListener('click', () => showMemberForm(selectedMember));
 $('#edit-team').addEventListener('click', () => showMemberForm(selectedMember, true));
 $('#cancel-edit').addEventListener('click', () => {
@@ -120,10 +146,12 @@ $('#cancel-edit').addEventListener('click', () => {
 $('#member-form').addEventListener('submit', event => {
   event.preventDefault();
   const form = event.currentTarget;
-  const values = { ...selectedMember, ...Object.fromEntries(new FormData(form)) };
+  const formData = new FormData(form);
+  const teammates = formData.getAll('teammate').map(name => name.trim()).filter(Boolean);
+  formData.delete('teammate');
+  const values = { ...selectedMember, ...Object.fromEntries(formData), teammates };
   values.hasTeam = form.elements.hasTeam.checked;
   if (form.elements.needsTransportation) values.needsTransportation = form.elements.needsTransportation.checked;
-  values.teammates = form.elements.teammates.value.split('\n').map(name => name.trim()).filter(Boolean);
   values.revision = selectedMember?.revision ?? 0;
   changeMember(selectedMember, selectedMember ? 'PATCH' : 'POST', values,
     selectedMember ? 'Member details saved.' : 'Member added.', form.querySelector('[type="submit"]'));
@@ -139,11 +167,15 @@ function deleteMember(record, button) {
 }
 
 async function changeMember(record, method, values, message, button) {
-  if (saving || loading) return;
+  const dialog = $('#registration-detail');
+  const status = !dialog.open ? $('#load-status') :
+    $('#member-form').hidden ? $('#detail-status') : $('#member-save-status');
+  if (saving || loading) {
+    status.textContent = 'Please wait for the current request to finish, then try again.';
+    return;
+  }
   saving = true;
   button.disabled = true;
-  const dialog = $('#registration-detail');
-  const status = dialog.open ? $('#detail-status') : $('#load-status');
   status.textContent = 'Saving…';
   try {
     const path = record ? `/api/admin/registrations?id=${encodeURIComponent(record.id)}` : '/api/admin/registrations';
@@ -157,10 +189,15 @@ async function changeMember(record, method, values, message, button) {
         $('#detail-status').textContent = message;
       } else dialog.close();
     }
-    if (method === 'POST') offset = 0;
+    if (method === 'POST') {
+      offset = 0;
+      clearFilters();
+      $('#roster-team').value = '';
+      $('#roster-search').value = '';
+    }
     await load(message);
   } catch (error) {
-    (dialog.open ? $('#detail-status') : $('#load-status')).textContent = error.message;
+    (dialog.open ? status : $('#load-status')).textContent = error.message;
   }
   finally { saving = false;button.disabled = false; }
 }

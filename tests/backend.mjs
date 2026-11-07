@@ -122,10 +122,14 @@ test('Admin can edit, check in, undo check-in, and delete an existing registrati
   assert.equal((await mutate('DELETE')).status, 200);
   assert.equal((await mutate('PATCH', { checkedIn: true })).status, 404);
 
-  const added = await mutate('POST', { ...payload, hasTeam: true, teamName: 'Arena Team' });
+  const added = await mutate('POST', {
+    fullName: payload.fullName, email: payload.email, hasTeam: true, teamName: 'Arena Team',
+    teammates: ['One', 'Two', 'Three'], needsTransportation: false,
+  });
   assert.equal(added.status, 201);
   const newMember = (await added.json()).record;
   assert.equal(newMember.teamName, 'Arena Team');
+  assert.deepEqual(newMember.teammates, ['One', 'Two', 'Three']);
   assert.equal(JSON.parse(data.get(newMember.id)).email, 'player@example.com');
   assert.equal((await mutate('POST', payload)).status, 409);
 });

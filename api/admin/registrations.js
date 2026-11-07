@@ -16,7 +16,7 @@ export const handleAdminRegistrations = endpoint(async request => {
 
   checkOrigin(request);
   if (request.method === 'POST') {
-    const values = validateMemberDetails(await readJson(request));
+    const values = validateMemberDetails(await readJson(request), { allowIncomplete: true });
     const record = { id: randomUUID(), createdAt: new Date().toISOString(), ...values };
     const [state] = await saveRegistration(record, privateHash(record.email), privateHash(record.id));
     if (!state) throw new HttpError(409, 'This email is already registered.');
@@ -35,7 +35,7 @@ export const handleAdminRegistrations = endpoint(async request => {
       updated = { ...record, checkedInAt: input.checkedIn ? record.checkedInAt || new Date().toISOString() : null };
     } else {
       if (input.revision !== (record.revision ?? 0)) throw new HttpError(409, 'Registration details changed. Refresh and try again.');
-      updated = { ...record, ...validateMemberDetails(input), revision: (record.revision ?? 0) + 1 };
+      updated = { ...record, ...validateMemberDetails(input, { allowIncomplete: true }), revision: (record.revision ?? 0) + 1 };
     }
   }
   const result = await changeRegistration(id, current, updated, privateHash(record.email), privateHash(updated?.email ?? record.email));
