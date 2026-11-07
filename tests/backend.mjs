@@ -26,6 +26,23 @@ function setup(context) {
     if (op === 'SET') { data.set(args[0], args[1]);result = 'OK'; }
     else if (op === 'GET') result = data.get(args[0]) ?? null;
     else if (op === 'DEL') result = Number(data.delete(args[0]));
+    else if (op === 'HGET') result = data.get(args[1]) ?? null;
+    else if (op === 'EVAL' && args[4]?.startsWith('arena:email:')) {
+      const [id, record] = args.slice(7);
+      if (data.has(args[4])) result = [0, ''];
+      else {
+        data.set(args[4], id);
+        data.set(id, record);
+        result = [1, id];
+      }
+    }
+    else if (op === 'EVAL' && args[1] === 5) {
+      const [id, current, updated] = args.slice(7);
+      assert.equal(current, data.get(id));
+      if (updated) data.set(id, updated);
+      else data.delete(id);
+      result = 1;
+    }
     else if (op === 'EVAL') result = 1;
     else throw new Error(`Unexpected test command: ${op}`);
     return Response.json({ result });
@@ -77,6 +94,40 @@ test('Login throttling fails closed before password verification', async context
   setup(context);
   context.mock.method(globalThis, 'fetch', async () => Response.json({ result: 9 }));
   assert.equal((await handleSession(request('/api/admin/session', { password: 'wrong' }))).status, 429);
+});
+
+test('Admin can edit, check in, undo check-in, and delete an existing registration', async context => {
+  const { data, password } = setup(context);
+  const id = payload.submissionId;
+  const path = `/api/admin/registrations?id=${id}`;
+  const original = { id, createdAt: new Date(before).toISOString(), ...validateRegistration(payload, before) };
+  data.set(id, JSON.stringify(original));
+  const login = await handleSession(request('/api/admin/session', { password }));
+  const cookie = login.headers.get('set-cookie');
+  const mutate = (method, body, headers = {}) => handleAdminRegistrations(request(path, body, {
+    method, headers: { cookie, Origin: 'https://arena-26.vercel.app', 'Content-Type': 'application/json', ...headers },
+  }));
+  assert.equal((await mutate('DELETE', undefined, { cookie: '' })).status, 401);
+  assert.equal((await mutate('PATCH', { checkedIn: true }, { Origin: 'https://other.example' })).status, 403);
+  const checkIn = await (await mutate('PATCH', { checkedIn: true })).json();
+  assert.ok(Date.parse(checkIn.record.checkedInAt));
+  const repeated = await (await mutate('PATCH', { checkedIn: true })).json();
+  assert.equal(repeated.record.checkedInAt, checkIn.record.checkedInAt);
+  const edited = await (await mutate('PATCH', { ...payload, fullName: 'Updated Player', revision: 0 })).json();
+  assert.equal(edited.record.fullName, 'Updated Player');
+  assert.equal(edited.record.checkedInAt, checkIn.record.checkedInAt);
+  assert.equal((await mutate('PATCH', { ...payload, revision: 0 })).status, 409);
+  const undone = await (await mutate('PATCH', { checkedIn: false })).json();
+  assert.equal(undone.record.checkedInAt, null);
+  assert.equal((await mutate('DELETE')).status, 200);
+  assert.equal((await mutate('PATCH', { checkedIn: true })).status, 404);
+
+  const added = await mutate('POST', { ...payload, hasTeam: true, teamName: 'Arena Team' });
+  assert.equal(added.status, 201);
+  const newMember = (await added.json()).record;
+  assert.equal(newMember.teamName, 'Arena Team');
+  assert.equal(JSON.parse(data.get(newMember.id)).email, 'player@example.com');
+  assert.equal((await mutate('POST', payload)).status, 409);
 });
 
 test('Request parsing rejects oversized and malformed JSON', async () => {

@@ -8,7 +8,7 @@ export const handleExport = endpoint(async request => {
   await requireAdmin(request);
   await rateLimit(request, 'export', 10, 600);
   const ids = await redis(['ZREVRANGE', 'arena:registration-order', 0, -1]);
-  const columns = ['id', 'createdAt', 'fullName', 'email', 'phoneNumber', 'discordTag', 'university', 'yearOfStudy', 'studentId', 'hasTeam', 'teamName', 'teammates', 'needsTransportation', 'transportationAddress', 'expectations'];
+  const columns = ['id', 'createdAt', 'fullName', 'email', 'phoneNumber', 'discordTag', 'university', 'yearOfStudy', 'studentId', 'hasTeam', 'teamName', 'teammates', 'needsTransportation', 'transportationAddress', 'expectations', 'checkedInAt'];
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {

@@ -17,14 +17,43 @@
       <span class="security-note mono">PRIVATE DATA · SECURE SESSION</span>
     </section>
     <section id="dashboard" hidden>
-      <div class="dashboard-heading"><div><span class="eyebrow">NCS / REGISTRATIONS</span><h1>The <em>players.</em></h1></div><div class="actions"><button id="refresh" class="button secondary">Refresh ↻</button><a class="button secondary" href="/api/admin/export">Export all CSV ↓</a><button id="logout" class="button secondary">Sign out</button></div></div>
+      <div class="dashboard-heading"><div><span class="eyebrow">NCS / REGISTRATIONS</span><h1>The <em>players.</em></h1></div><div class="actions"><button id="add-member" class="button">+ New member</button><button id="refresh" class="button secondary">Refresh ↻</button><a class="button secondary" href="/api/admin/export">Export all CSV ↓</a><button id="logout" class="button secondary">Sign out</button></div></div>
       <div class="stats"><article><span>Total registrations</span><strong id="total">0</strong></article><article><span>With a team</span><strong id="teams">0</strong></article><article><span>Solo players</span><strong id="solo">0</strong></article><article><span>Transport requested</span><strong id="transport">0</strong></article></div>
-      <div class="table-toolbar"><label for="search">Search this page</label><input id="search" type="search" placeholder="Name, email, institution, team…" autocomplete="off" /><p id="load-status" role="status" aria-live="polite"></p></div>
-      <div class="table-scroll"><table><caption class="sr-only">Registered participants, newest first</caption><thead><tr><th scope="col">Player</th><th scope="col">Institution</th><th scope="col">Participation</th><th scope="col">Transport</th><th scope="col">Registered</th><th scope="col">Details</th></tr></thead><tbody id="registration-rows"></tbody></table></div>
+      <div class="table-toolbar"><label for="search">Search members</label><input id="search" type="search" placeholder="Name, email, institution, team…" autocomplete="off" /><p id="load-status" role="status" aria-live="polite"></p></div>
+      <div class="member-filters">
+        <label>Team<select id="filter-team"><option value="">All teams and solo</option><option value="solo">Solo members</option></select></label>
+        <label>Attendance<select id="filter-attendance"><option value="">Any attendance</option><option value="yes">Checked in</option><option value="no">Awaiting check-in</option></select></label>
+        <label>Transport<select id="filter-transport"><option value="">Any transport</option><option value="yes">Requested</option><option value="no">Independent</option></select></label>
+        <label>Year of study<select id="filter-year"><option value="">All years</option><option>L1</option><option>L2</option><option>L3</option><option>M1</option></select></label>
+        <button id="clear-filters" class="button secondary">Clear filters</button>
+      </div>
+      <div class="table-scroll"><table><caption class="sr-only">Registered participants, newest first</caption><thead><tr><th scope="col">Player</th><th scope="col">Institution</th><th scope="col">Participation</th><th scope="col">Transport</th><th scope="col">Registered</th><th scope="col">Attendance</th><th scope="col">Details</th></tr></thead><tbody id="registration-rows"></tbody></table></div>
       <p id="empty-state" class="empty-state" hidden>No registrations yet. New players will appear here after submitting the form.</p>
       <div class="pagination"><button id="previous-page" class="button secondary">← Previous</button><span id="page-info" class="mono"></span><button id="next-page" class="button secondary">Next →</button></div>
+      <section class="teams-section" aria-labelledby="teams-title">
+        <h2 id="teams-title">Teams</h2>
+        <div class="member-filters">
+          <label>Team name<select id="roster-team"><option value="">All teams</option></select></label>
+          <label>Find a team or member<input id="roster-search" type="search" placeholder="Team, member, or listed teammate" autocomplete="off" /></label>
+          <button id="clear-roster-filters" class="button secondary">Clear team filters</button>
+        </div>
+        <div id="team-rosters"><p id="teams-status" role="status"></p><div id="team-list"></div></div>
+      </section>
     </section>
   </main>
-  <dialog id="registration-detail"><div class="detail-heading"><h2 id="detail-title">Registration</h2><button id="close-detail" class="button secondary">Close ×</button></div><dl id="detail-fields"></dl></dialog>
+  <dialog id="registration-detail" aria-labelledby="detail-title">
+    <div class="detail-heading"><h2 id="detail-title">Registration</h2><button id="close-detail" class="button secondary">Close ×</button></div>
+    <div class="actions" id="member-actions">
+      <button id="edit-member" class="button secondary">Edit details</button>
+      <button id="edit-team" class="button secondary">Edit team</button><button id="delete-member" class="button secondary danger">Delete member</button>
+    </div>
+    <p id="detail-status" role="status"></p>
+    <dl id="detail-fields"></dl>
+    <form id="member-form" hidden>
+      <div id="edit-fields"></div>
+      <datalist id="team-options"></datalist>
+      <div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" id="cancel-edit" type="button">Cancel</button></div>
+    </form>
+  </dialog>
 </body>
 </html>

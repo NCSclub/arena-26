@@ -12,6 +12,8 @@ const root = fileURLToPath(new URL('./dist/', import.meta.url));
 const routes = { '/api/registrations': registrations, '/api/admin/session': session, '/api/admin/registrations': adminRegistrations, '/api/admin/export': exportRegistrations };
 const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
 const port = Number(process.env.PORT || 4173);
+if (process.argv.includes('--local-dev') && !process.env.VERCEL) process.env.ARENA_LOCAL_DEV = 'true';
+process.env.PORT = String(port);
 createServer(async (request, response) => {
   try {
     const url = new URL(request.url, `http://127.0.0.1:${port}`), pathname = decodeURIComponent(url.pathname);
