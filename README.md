@@ -5,7 +5,7 @@ Site de l’événement ARENA, en anglais. Projet indépendant du formulaire de 
 - Site : https://arena-26.vercel.app/
 - Administration : https://arena-26.vercel.app/admin
 - Dépôt privé : https://github.com/NCSclub/arena-26
-- Clôture des inscriptions : **10 novembre 2026 à 17 h, heure algérienne** (`2026-11-10T17:00:00+01:00`).
+- Clôture des inscriptions : **11 novembre 2026 à 17 h, heure algérienne** (`2026-11-11T17:00:00+01:00`).
 
 ## Architecture
 

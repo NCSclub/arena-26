@@ -54,8 +54,8 @@ test('Registration validates required fields, limits, conditional answers, and t
   const valid = validateRegistration({ ...payload, teamName: 'Stale', teammates: ['Stale'], transportationAddress: 'Stale' }, before);
   assert.equal(valid.email, 'player@example.com');assert.equal(valid.teamName, '');assert.deepEqual(valid.teammates, []);assert.equal(valid.transportationAddress, '');
   for (const change of [{ email: 'invalid' }, { fullName: '' }, { fullName: [] }, { phoneNumber: 'abc' }, { yearOfStudy: 'L9' }, { hasTeam: 'yes' }, { hasTeam: true, teamName: '' }, { hasTeam: true, teamName: 'Test', teammates: ['1','2','3','4'] }, { needsTransportation: true, transportationAddress: '' }, { expectations: 'x'.repeat(2001) }, { website: 'spam' }, { submissionId: 'bad' }]) assert.throws(() => validateRegistration({ ...payload, ...change }, before));
-  assert.doesNotThrow(() => validateRegistration(payload, Date.parse('2026-11-10T15:59:59Z')));
-  assert.throws(() => validateRegistration(payload, Date.parse('2026-11-10T16:00:00Z')), error => error.status === 410);
+  assert.doesNotThrow(() => validateRegistration(payload, Date.parse('2026-11-11T15:59:59Z')));
+  assert.throws(() => validateRegistration(payload, Date.parse('2026-11-11T16:00:00Z')), error => error.status === 410);
 });
 
 test('CSV neutralizes formula cells and quotes untrusted multiline content', () => {
