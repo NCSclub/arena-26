@@ -4,12 +4,13 @@ Site de l’événement ARENA, en anglais. Projet indépendant du formulaire de 
 
 - Site : https://arena-26.vercel.app/
 - Administration : https://arena-26.vercel.app/admin
+- Soumission du code : https://arena-26.vercel.app/submit
 - Dépôt privé : https://github.com/NCSclub/arena-26
 - Clôture des inscriptions : **12 novembre 2026 à 17 h, heure algérienne** (`2026-11-12T17:00:00+01:00`).
 
 ## Architecture
 
-HTML, CSS et JavaScript natifs, avec quatre fonctions Node.js 24 sur Vercel. Aucune nouvelle dépendance serveur. Le plan gratuit Upstash Redis conserve les inscriptions ; l’éviction et le passage automatique à un plan payant sont désactivés.
+HTML, CSS et JavaScript natifs, avec sept fonctions Node.js 24 sur Vercel. Aucune nouvelle dépendance serveur. Le plan gratuit Upstash Redis conserve les inscriptions ; l’éviction et le passage automatique à un plan payant sont désactivés.
 
 | Fichier | Rôle |
 | --- | --- |
@@ -22,11 +23,16 @@ HTML, CSS et JavaScript natifs, avec quatre fonctions Node.js 24 sur Vercel. Auc
 | `dist/assets/arena-brand.svg`, `arena-symbol.svg` | Cadrages SVG du logo fourni, sans retouche de ses pixels |
 | `dist/ascii-background.js`, `dist/fluid-wake.js` | Fond ASCII WebGL2 et interaction au pointeur |
 | `dist/visuals.js`, `dist/sculpture-motion.js` | Morphing ARENA ↔ `</>`, rotation et retour progressif |
-| `dist/admin.html`, `admin.css`, `admin.js` | Connexion, liste paginée, recherche dans la page et fiches détaillées |
+| `dist/admin.html`, `admin.css`, `admin.js` | Connexion et tableau de bord en deux pages : Registrations (membres, équipes, check-in) et Submissions (épreuves du formulaire, réponses reçues) |
 | `api/registrations.js` | Enregistrement public, validé et limité en fréquence |
 | `api/admin/session.js` | Connexion, vérification de session et déconnexion |
 | `api/admin/registrations.js` | Liste privée de 50 inscriptions par page et compteurs globaux |
 | `api/admin/export.js` | Export CSV privé de toutes les inscriptions |
+| `dist/submit.html`, `submit.css`, `submit.js` | Page `/submit` : nom d’équipe et une carte par épreuve (réponse texte ou fichier) |
+| `dist/submission-rules.js` | Réglages par défaut du formulaire de soumission, types d’épreuve, plafonds et extensions binaires interdites |
+| `api/submissions.js` | Réglages publics du formulaire (GET) et réception des soumissions (POST), validée et limitée en fréquence |
+| `api/admin/submissions.js` | Liste privée des soumissions, lecture et téléchargement des fichiers, suppression |
+| `api/admin/settings.js` | Lecture et enregistrement privés des réglages du formulaire de soumission |
 | `lib/http.js`, `security.js`, `store.js`, `validation.js` | Contrôles HTTP, authentification, stockage atomique et validation |
 | `server.mjs` | Serveur local avec les mêmes routes API |
 
@@ -37,6 +43,29 @@ Le formulaire envoie les coordonnées, les informations étudiantes, l’équipe
 Les données sont dans le hash privé `arena:registrations`. Un index trié les classe par date, et des index HMAC assurent la déduplication sans exposer les emails dans les clés. Aucun jeton Redis ni secret d’administration n’est envoyé au navigateur. Le formulaire contient un champ piège contre les soumissions automatisées et une information sur l’utilisation des données par NCS.
 
 Les inscriptions sont conservées sans expiration automatique. Après l’événement, l’organisation doit décider de la durée de conservation et supprimer les données devenues inutiles via le stockage. Aucun email de confirmation n’est envoyé.
+
+## Soumission des réponses
+
+L’événement compte deux sessions, **Morning** et **Afternoon** (après le déjeuner). La page `/submit` affiche d’abord une carte par session, avec ses épreuves, son état et, si une heure de clôture est fixée, un compte à rebours ; seule une session ouverte peut être choisie. Le formulaire de la session demande uniquement le nom de l’équipe, puis affiche une carte par épreuve : des **cases texte numérotées** (Part 1, Part 2…, 500 caractères au plus chacune) ou un **fichier** (un seul fichier de code ou de texte). Un seul bouton envoie toutes les réponses remplies ; une équipe peut n’envoyer que les épreuves résolues, laisser des cases vides et revenir plus tard pour le reste. La page vérifie toutes les 30 secondes si une session a été ouverte ou fermée. Aucun email n’est demandé et aucune inscription préalable n’est vérifiée. Le navigateur lit les fichiers comme du texte (UTF-8, UTF-16 avec BOM ou Windows-1252) et refuse les fichiers binaires ; le serveur revérifie chaque règle avec les réglages en vigueur.
+
+Pour limiter les abus, le formulaire n’est ouvert que lorsque les organisateurs l’activent, les envois sont limités en fréquence et un champ piège bloque les robots. Chaque envoi est conservé avec son heure ; un identifiant de requête évite les doublons lors d’une nouvelle tentative. Les fiches (équipe, session, réponses texte, noms de fichiers, nom de l’épreuve au moment de l’envoi) sont dans le hash `arena:submissions` et le contenu des fichiers dans `arena:submission-files`, pour que la liste d’administration ne charge jamais le code.
+
+### Réglages depuis le tableau de bord
+
+La page Submissions de l’administration (`/admin#submissions`) contient le bloc Form settings :
+
+- Un panneau par session (**Morning Session**, **Afternoon Session**) :
+  - **Accept submissions** ouvre ou ferme la session. Fermée, elle apparaît verrouillée sur `/submit` et le serveur refuse tout envoi (410). Une session ne peut pas être ouverte sans au moins une épreuve.
+  - **Closes at (Algeria time)**, facultatif : les équipes voient un compte à rebours et la session se ferme d’elle-même à cette heure. **Clear** retire l’heure de clôture.
+  - **Challenges** : nom, type **Text boxes** (avec le nombre de cases, de 1 à 10) ou **File upload** ; l’ordre de la liste est celui des cartes. Chaque épreuve garde un identifiant interne : un renommage reste lié aux réponses existantes, et une épreuve retirée apparaît avec « (removed) » tant qu’elle a des réponses.
+  - Les deux sessions sont préremplies avec le programme : le matin Hard Puzzle (2 cases), Medium Puzzle (3 cases), Hard Reverse, Easy Coding et Hard Coding (fichiers) ; l’après-midi Easy Puzzle (3 cases), Medium Puzzle (2 cases), Medium Reverse, Easy Reverse et Medium Coding (fichiers). Les deux sessions sont fermées par défaut.
+- **File challenges** : extensions acceptées (séparées par des espaces ou des virgules ; les formats binaires comme `zip`, `exe`, `pdf` ou les images sont refusés), taille maximale par fichier (1024 Ko au plus) et total par envoi (2048 Ko au plus, pour rester sous la limite de 4,5 Mo par requête de Vercel).
+
+Les réglages sont enregistrés dans la clé `arena:submission-settings` ; tant qu’aucun réglage n’a été enregistré, les valeurs par défaut de `dist/submission-rules.js` s’appliquent (deux sessions préremplies et fermées). Le champ d’heure de clôture utilise l’heure algérienne (UTC+1 toute l’année). Un numéro de révision empêche deux organisateurs d’écraser mutuellement leurs modifications. Les réglages publics sont mis en cache 10 secondes par Vercel ; l’envoi vérifie toujours les réglages à jour.
+
+### Lecture des réponses
+
+**Latest answers by team** affiche, pour la session choisie, une ligne par équipe et une colonne par épreuve, avec la réponse la plus récente de l’équipe pour chaque épreuve (cases texte numérotées ou fichier) et son heure d’envoi ; un clic sur un fichier ouvre le code. **Submission history** liste tous les envois des deux sessions, du plus récent au plus ancien, avec lecture, téléchargement des fichiers (toujours servis en `text/plain`, en pièce jointe, nommés `équipe_session_épreuve_fichier`) et suppression. La page Registrations (`/admin#registrations`) regroupe les membres, les équipes, le check-in et l’export CSV.
 
 ## Administration
 

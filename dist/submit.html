@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#090b0c" />
+    <meta name="description" content="Submit your ARENA Challenge 2026 solutions to the judges." />
+    <title>Submit your solutions — ARENA 26</title>
+    <link rel="icon" href="/assets/arena-symbol.svg" />
+    <link rel="stylesheet" href="/style.css?v=registration-contrast" />
+    <link rel="stylesheet" href="/submit.css" />
+    <script type="module" src="/submit.js"></script>
+  </head>
+  <body>
+    <canvas class="ascii-bg site-ascii" data-ascii="background" aria-hidden="true"></canvas>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="header wrap">
+      <a href="/" class="brand" aria-label="ARENA 26, home"
+        ><img src="/assets/arena-symbol.svg" width="42" height="42" alt="" /><span>ARENA</span></a
+      >
+      <span class="mono submission-header-label">SUBMISSIONS</span>
+    </header>
+    <main id="main">
+      <section class="registration submission wrap" aria-labelledby="submission-title">
+        <a class="back-link mono" href="/">← BACK TO THE ARENA</a>
+        <div class="registration-layout">
+          <aside>
+            <span class="eyebrow mono">ARENA CHALLENGE / 2026</span>
+            <h1 id="submission-title">SHOW <br />YOUR <br /><em>WORK.</em></h1>
+            <p>Send your team’s answers<br />to the judges.</p>
+            <ol class="steps submission-checklist" aria-label="How to submit">
+              <li><span>01</span>Pick your session</li>
+              <li><span>02</span>Answer what you solved</li>
+              <li><span>03</span>Come back for the rest</li>
+            </ol>
+            <div class="registration-side-note mono">
+              &gt; THINK FAST.<br />&gt; GAIN MORE.<br /><span>ARENA_26 / SUBMISSIONS</span>
+            </div>
+          </aside>
+          <div class="form-panel">
+            <div class="form-panel-top mono"><span id="panel-label">SUBMISSIONS</span><span>EDITION 2026</span></div>
+
+            <section id="session-picker" class="session-picker" aria-labelledby="picker-title">
+              <h2 id="picker-title" tabindex="-1">SUBMIT YOUR <em>SOLUTIONS.</em></h2>
+              <p class="form-intro">Choose your session to send your challenge answers.</p>
+              <div class="submission-notice" role="note">
+                <span class="notice-icon" aria-hidden="true">!</span>
+                <p><strong>Submission notice</strong>Puzzle challenges use text boxes. For coding and reverse challenges, upload one code or text file each.</p>
+              </div>
+              <div id="session-cards" class="session-cards"></div>
+              <p id="picker-status" class="form-status error" role="status" aria-live="polite"></p>
+            </section>
+
+            <form id="submission-form" novalidate hidden>
+              <div class="registration-trap" aria-hidden="true">
+                <label>Leave this empty<input name="website" tabindex="-1" autocomplete="off" /></label>
+              </div>
+              <button id="back-to-sessions" class="text-link session-back mono" type="button">← ALL SESSIONS</button>
+              <div class="session-heading">
+                <h2 id="session-title" tabindex="-1"></h2>
+                <div id="session-countdown" class="session-countdown" hidden>
+                  <span class="mono">TIME LEFT</span>
+                  <strong id="countdown-value" class="mono" role="timer" aria-live="off">00:00:00</strong>
+                </div>
+              </div>
+              <p class="form-intro">
+                Answer the challenges you’ve solved, then submit. You can come back later to send the rest: every submission is kept with the time it was sent.
+              </p>
+              <p id="session-closed-banner" class="session-closed-banner" role="alert" hidden>
+                This session is now closed. Answers can no longer be sent.
+              </p>
+              <fieldset>
+                <legend><span>01</span> YOUR TEAM</legend>
+                <div class="fields">
+                  <label class="full"
+                    >Team name *<input name="teamName" required maxlength="100" autocomplete="off" placeholder="Enter your team name"
+                  /></label>
+                </div>
+              </fieldset>
+              <fieldset>
+                <legend><span>02</span> CHALLENGES</legend>
+                <p id="file-rules" class="challenge-rules mono"></p>
+                <div id="challenge-cards" class="challenge-cards"></div>
+              </fieldset>
+              <p class="export-note">Your answers and files are sent securely to the NCS organizing team for judging.</p>
+              <div class="form-actions">
+                <span id="answer-summary" class="mono"></span>
+                <button id="submit-button" class="button primary" type="submit">
+                  Submit solutions <span aria-hidden="true">→</span>
+                </button>
+              </div>
+              <p id="form-status" class="form-status" role="status" aria-live="polite"></p>
+            </form>
+
+            <section id="submission-success" class="registration-success submission-success" tabindex="-1" hidden>
+              <h2>SOLUTIONS <em>RECEIVED.</em></h2>
+              <p>The judges have your answers. Keep this reference in case you need help:</p>
+              <dl id="success-details"></dl>
+              <div class="actions">
+                <button id="submit-again" class="button primary" type="button">Send more answers <span aria-hidden="true">↻</span></button>
+                <button id="success-sessions" class="button ghost" type="button">All sessions <span aria-hidden="true">→</span></button>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

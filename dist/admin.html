@@ -17,7 +17,15 @@
       <span class="security-note mono">PRIVATE DATA · SECURE SESSION</span>
     </section>
     <section id="dashboard" hidden>
-      <div class="dashboard-heading"><div><span class="eyebrow">NCS / REGISTRATIONS</span><h1>The <em>players.</em></h1></div><div class="actions"><button id="add-member" class="button">+ New member</button><button id="refresh" class="button secondary">Refresh ↻</button><a class="button secondary" href="/api/admin/export">Export all CSV ↓</a><button id="logout" class="button secondary">Sign out</button></div></div>
+      <div class="dashboard-tabs">
+        <nav aria-label="Dashboard pages">
+          <a href="#registrations" data-tab="registrations">Registrations <span id="registrations-tab-count" class="tab-count"></span></a>
+          <a href="#submissions" data-tab="submissions">Submissions <span id="submissions-tab-count" class="tab-count"></span></a>
+        </nav>
+        <button id="logout" class="button secondary">Sign out</button>
+      </div>
+      <div id="registrations-page">
+      <div class="dashboard-heading"><div><span class="eyebrow">NCS / REGISTRATIONS</span><h1>The <em>players.</em></h1></div><div class="actions"><button id="add-member" class="button">+ New member</button><button id="refresh" class="button secondary">Refresh ↻</button><a class="button secondary" href="/api/admin/export">Export all CSV ↓</a></div></div>
       <div class="stats"><article><span>Total registrations</span><strong id="total">0</strong></article><article><span>With a team</span><strong id="teams">0</strong></article><article><span>Solo players</span><strong id="solo">0</strong></article><article><span>Transport requested</span><strong id="transport">0</strong></article></div>
       <div class="table-toolbar"><label for="search">Search members</label><input id="search" type="search" placeholder="Name, email, institution, team…" autocomplete="off" /><p id="load-status" role="status" aria-live="polite"></p></div>
       <div class="member-filters">
@@ -42,6 +50,48 @@
         </div>
         <div id="team-rosters"><p id="teams-status" role="status"></p><div id="team-list"></div></div>
       </section>
+      </div>
+      <div id="submissions-page" hidden>
+      <div class="dashboard-heading"><div><span class="eyebrow">NCS / SUBMISSIONS</span><h1>The <em>answers.</em></h1></div><div class="actions"><a class="button secondary" href="/submit" target="_blank" rel="noopener">Open submission page ↗</a><button id="refresh-submissions" class="button secondary">Refresh ↻</button></div></div>
+      <div class="stats"><article><span>Total submissions</span><strong id="submission-total">0</strong></article><article><span>Teams that submitted</span><strong id="submission-teams">0</strong></article><article><span>Latest submission</span><strong id="submission-latest" class="stat-text">—</strong></article><article><span>Sessions</span><strong id="submission-state" class="stat-text">—</strong></article></div>
+      <section class="settings-section" aria-labelledby="settings-title">
+        <h2 id="settings-title">Form settings</h2>
+        <p class="section-note">These control what teams see on the submission page. Changes go live as soon as you save.</p>
+        <form id="settings-form">
+          <p class="section-note">Each session has its own challenges. A text challenge shows numbered boxes (Part 1, Part 2…); a file challenge takes one file. Teams see challenges in this order, and renaming keeps earlier answers linked.</p>
+          <div id="session-settings" class="session-settings"></div>
+          <fieldset>
+            <legend>File challenges</legend>
+            <label>Accepted file types <small>Extensions separated by spaces or commas. Text formats only.</small><textarea name="extensions" rows="3" required spellcheck="false"></textarea></label>
+            <div class="settings-grid">
+              <label>Max size per file (KB)<input name="maxFileKB" type="number" min="1" required /></label>
+              <label>Max total per submission (KB)<input name="maxTotalKB" type="number" min="1" required /></label>
+            </div>
+          </fieldset>
+          <div class="settings-footer">
+            <p id="settings-status" role="status" aria-live="polite"></p>
+            <div class="actions"><button type="submit" class="button">Save settings</button><button type="button" id="discard-settings" class="button secondary">Discard changes</button></div>
+          </div>
+        </form>
+      </section>
+      <section class="submissions-section" aria-labelledby="latest-title">
+        <h2 id="latest-title">Latest answers by team</h2>
+        <p class="section-note">Each cell shows the newest answer a team sent for that challenge. Select a file to read the code.</p>
+        <div class="member-filters">
+          <label>Session<select id="grid-session"></select></label>
+          <label>Find a team<input id="submission-search" type="search" placeholder="Team name or answer…" autocomplete="off" /></label>
+        </div>
+        <p id="submissions-status" role="status" aria-live="polite"></p>
+        <div class="table-scroll"><table class="answer-grid"><caption class="sr-only">Latest answer per team and challenge</caption><thead><tr id="latest-head"></tr></thead><tbody id="latest-rows"></tbody></table></div>
+        <p id="latest-empty" class="empty-state" hidden>No submissions yet.</p>
+      </section>
+      <section class="submissions-section" aria-labelledby="history-title">
+        <h2 id="history-title">Submission history</h2>
+        <p class="section-note">Every submission, newest first. Teams can send several times; each one is kept.</p>
+        <div class="table-scroll"><table><caption class="sr-only">Every submission, newest first</caption><thead><tr><th scope="col">Team</th><th scope="col">Session</th><th scope="col">Challenges answered</th><th scope="col">Submitted</th><th scope="col">Actions</th></tr></thead><tbody id="submission-rows"></tbody></table></div>
+        <p id="submissions-empty" class="empty-state" hidden>No submissions yet.</p>
+      </section>
+      </div>
     </section>
   </main>
   <dialog id="registration-detail" aria-labelledby="detail-title">
@@ -60,6 +110,13 @@
         <div class="actions"><button class="button" type="submit">Save changes</button><button class="button secondary" id="cancel-edit" type="button">Cancel</button></div>
       </div>
     </form>
+  </dialog>
+  <dialog id="submission-detail" aria-labelledby="submission-detail-title">
+    <div class="detail-heading"><h2 id="submission-detail-title">Submission</h2><button id="close-submission" class="button secondary">Close ×</button></div>
+    <div class="actions"><button id="delete-submission" class="button secondary danger">Delete submission</button></div>
+    <p id="submission-detail-status" role="status"></p>
+    <dl id="submission-fields"></dl>
+    <div id="submission-files"></div>
   </dialog>
 </body>
 </html>
